@@ -160,6 +160,8 @@ class Walk_With_AI(object):
         
         ai_steer = ai_pilot.create_output(ai_input)
         
+        ai_pilot.update_log(ai_input,ai_steer)
+        
         return ai_steer
     
     def get_level_state(self,walker,blocks,finish):
@@ -198,16 +200,16 @@ class Walk_With_AI(object):
         
         # --- game loop: one execution = one frame update
         while True:
+            # --- check for game end criteria
+            level_state = self.get_level_state(walker,blocks,finish)
+            
             # --- get steer for walker
             # get player steer if needed
             if ai_pilot == None:
                 steer = self.get_player_steer()
             # get ai steer if needed
             elif ai_pilot != None:
-                steer = self.get_ai_steer(ai_pilot,raw_level_history)
-            
-            # --- check for game end criteria
-            level_state = self.get_level_state(walker,blocks,finish)
+                steer = self.get_ai_steer(ai_pilot,raw_level_history,level_state)
             
             # --- append to raw state history and truncate
             raw_level_history.append(pg.surfarray.array3d(self.main_screen))
@@ -237,7 +239,7 @@ class Walk_With_AI(object):
         pg.quit()
         #sys.exit()
         
-        return raw_level_history[-(history_length+1):]
+        return ai_pilot
     
 class AI_Walker(object):
     '''Wrapper class to pass to Walk_With_AI that converts raw level state history
@@ -253,6 +255,23 @@ class AI_Walker(object):
             
         # attach prediction function that calculates ai steer
         self.create_output = model.predict
+        
+        # initialize the ai pilot's log to be able to access the history created
+        self.log = {'X':[],'y':[], 'reinforce_coeff':None}
+        
+    def update_log(self,ai_input,ai_steer,level_state):
+        
+        # update log with current input
+        self.log['X'].append(ai_input)
+        
+        # update log with current steer
+        self.log['y'].append(ai_steer)
+        
+        # populate reinforcement coefficient if appropriate - might need to revisit these
+        if level_state == WON:
+            self.log['reinforce_coeff'] = 1
+        elif level_state == LOST:
+            self.log['reinforce_coeff'] = -1
         
 def conv_featurize_latest_frame(history_list):
     '''Helper function that takes the latest element of the history list, and formats that

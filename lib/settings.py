@@ -10,6 +10,9 @@ import pygame as pg
 # size of game window in pixel
 WINDOW_SIZE = (100,90)
 
+# number of color channels
+N_CHANNELS = 3
+
 # window color
 WHITE = pg.Color(255,255,255)
 

@@ -7,13 +7,14 @@ Created on Thu Mar 21 22:58:02 2019
 
 from game_class import Walk_With_AI, AI_Walker
 from settings import *
+import numpy as np
 from diy_dl_copy import FFNetwork
 
 def main():
     
     # --- build conv net
     # build network
-    neuralNet = diy_deep_learning_library.FFNetwork(2)
+    neuralNet = FFNetwork(2)
     
     kernelSize1 = 5
     channels1 = 2
@@ -33,7 +34,7 @@ def main():
     stride4 = 2
     padding4 = 'valid'
     
-    n4 = 40
+    n4 = 1840
     
     n_output = 3
     
@@ -60,7 +61,7 @@ def main():
                            padding=padding4,
                            poolingType='max')
     
-    neuralNet.addConvToFCReshapeLayer(n5)
+    neuralNet.addConvToFCReshapeLayer(n4)
     
     neuralNet.addFCLayer(n4,activation='tanh')
     
@@ -68,15 +69,22 @@ def main():
     
     neuralNet.fixateNetwork(np.zeros((10,N_CHANNELS,WINDOW_SIZE[0],WINDOW_SIZE[1])))
     
-    # --- create pilot wrapper around conv net
+    # prep network for inference without training it
+    neuralNet.oneHotY(np.array([LEFT,NONE,RIGHT]))
+
+    neuralNet.initialize_layer_optimizers('sgd',eta = 0.001,gamma = 0.99,epsilon = 0.00000001,lamda = 0,batchSize = 1)
     
+    neuralNet.trained = True
+    
+    # --- create pilot wrapper around conv net
+    neural_ai = AI_Walker(neuralNet)
     
     # --- let conv ent pilot the game
     new_game = Walk_With_AI()
     
-    conv_pilot = new_game.start()
+    neural_ai_with_log = new_game.start(ai_pilot = neural_ai)
         
-    return conv_pilot.log
+    return neural_ai_with_log.log
     
 if __name__ == "__main__":
     log = main()

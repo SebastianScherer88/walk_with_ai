@@ -1117,7 +1117,7 @@ class FFNetwork(object):
     def oneHotY(self,y):
         '''One hot vectorizes a target class index list into a [nData,nClasses] array.'''
                 
-        return getOneHotY(self,Y)
+        return getOneHotY(self,y)
     
     def initialize_layer_optimizers(self,optimizer,eta,gamma,epsilon,lamda,batchSize):
         '''Creates and attaches optimizer objects to all network layers carrying optimizable parameters'''
@@ -1753,7 +1753,7 @@ class GLM(object):
         if self.family == "multi-bernoulli":
             batch_size = X.shape[0]
             beta_m = self.Weight.shape[0]
-            DWeight = - 1/batch_size * (np.dot((Y - self.b_prime(Eta)).T,X),axis=0).reshape(beta_m,-1)
+            DWeight = - 1/batch_size * np.sum(np.dot((Y - self.b_prime(Eta)).T,X),axis=0).reshape(beta_m,-1)
         else:
             DWeight = -np.mean(np.multiply(Y - self.b_prime(Eta),X),axis=0).reshape(1,-1)
 
@@ -1782,10 +1782,10 @@ class GLM(object):
                              n_predictors):
         '''Helper function that initializes model's weights and bias term.'''
         
-	if str(type(model.classes_ordered)) == "<class 'NoneType'>":
-		n_out = 1
-	else:
-		n_out = length(self.classes_ordered)
+        if str(type(model.classes_ordered)) == "<class 'NoneType'>":
+            n_out = 1
+        else:
+            n_out = length(self.classes_ordered)
 
         self.Weight = np.random.randn(n_out,n_predictors) * 1 / (n_predictors + n_out)
         self.bias = np.ones((1,n_out))
@@ -1839,12 +1839,12 @@ class GLM(object):
         # create and attach specified optimizers to layers, also keep one for later reference
         self.initialize_optimizers(optimizer,eta,gamma,epsilon,lamda,batchSize)
         
-	# initialize one hot mapping if needed
-	if self.family == "multi-bernoulli":
-		self._get_one_hot_y(Y)
-		n_classes = length(classes_ordered)
-	else:
-	    n_classes = 1
+        # initialize one hot mapping if needed
+        if self.family == "multi-bernoulli":
+            self._get_one_hot_y(Y)
+            n_classes = length(classes_ordered)
+        else:
+            n_classes = 1
 
         # initialize weights and bias term
         self.initializeWeightBias(n_predictors = X.shape[1])
@@ -1853,9 +1853,9 @@ class GLM(object):
         for epoch in range(nEpochs):
             for i,(XBatch,YBatch,nBatches) in enumerate(getBatches(X,Y,batchSize)):
                 
-		# apply one hot mapping if needed
-		if self.family == "multi-bernoulli":
-		    YBatch = self._get_one_hot_y(YBatch)
+                # apply one hot mapping if needed
+                if self.family == "multi-bernoulli":
+                    YBatch = self._get_one_hot_y(YBatch)
 
                 # calculate linear predictor for loss function progress report
                 Eta = self.forwardProp(XBatch,

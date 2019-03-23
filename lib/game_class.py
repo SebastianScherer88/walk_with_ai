@@ -44,6 +44,8 @@ class Walker(Sprite):
                turn):
         
         # sanity check commands
+        #print("Turn:",turn)
+        
         assert turn in (LEFT,NONE,RIGHT)
         
         # update angle according to steer
@@ -153,14 +155,14 @@ class Walk_With_AI(object):
                          
         return steer
     
-    def get_ai_steer(self,ai_pilot,raw_level_history):
+    def get_ai_steer_and_log(self,ai_pilot,raw_level_history,level_state):
         
         # create input to ai pilot from raw level states
         ai_input = ai_pilot.create_input(raw_level_history)
         
         ai_steer = ai_pilot.create_output(ai_input)
         
-        ai_pilot.update_log(ai_input,ai_steer)
+        ai_pilot.update_log(ai_input,ai_steer,level_state)
         
         return ai_steer
     
@@ -200,6 +202,11 @@ class Walk_With_AI(object):
         
         # --- game loop: one execution = one frame update
         while True:
+            
+            # --- append to raw state history and truncate
+            raw_level_history.append(pg.surfarray.array3d(self.main_screen))
+            raw_level_history = raw_level_history[:history_length]
+            
             # --- check for game end criteria
             level_state = self.get_level_state(walker,blocks,finish)
             
@@ -209,17 +216,10 @@ class Walk_With_AI(object):
                 steer = self.get_player_steer()
             # get ai steer if needed
             elif ai_pilot != None:
-                steer = self.get_ai_steer(ai_pilot,raw_level_history,level_state)
-            
-            # --- append to raw state history and truncate
-            raw_level_history.append(pg.surfarray.array3d(self.main_screen))
-            raw_level_history = raw_level_history[:history_length]
+                steer = self.get_ai_steer_and_log(ai_pilot,raw_level_history,level_state)
             
             # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
-            if steer == QUIT:
-                break
-            elif level_state in (WON,LOST):
-                raw_level_history.append(level_state)
+            if steer == QUIT or level_state in (WON,LOST):
                 break
             elif level_state == CONTINUE:
                 pass

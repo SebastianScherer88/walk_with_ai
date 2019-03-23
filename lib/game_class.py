@@ -156,41 +156,48 @@ class Walk_With_AI(object):
     def start(self,
               ai_pilot = None):
         
-        # create screen
-        self.main_screen = pg.display.set_mode(self.window_size)
-        self.main_screen.fill(WHITE)
-        
-        # get sprite groups
-        all_sprites,blocks, markers, walker = self.get_level_sprites(self.levels[0])
-        
-        # draw all sprites
-        all_sprites.draw(self.main_screen)
-        pg.display.flip()
-        
+        # --- replay loop: one iteration = one game
         while True:
-            # --- get steer for walker
-            # get player inputs if needed
-            if ai_pilot == None:
-                steer = self.get_player_steer()
-            # get ai inputs if needed
-            elif ai_pilot != None:
-                pass
-            
-            # --- quit if needed
-            if steer == QUIT:
-                break
-            
-            # --- update walker sprite
-            walker.update(steer)
-            
-            # --- redraw screen
+            # create screen
+            self.main_screen = pg.display.set_mode(self.window_size)
             self.main_screen.fill(WHITE)
+            
+            # get sprite groups
+            all_sprites,blocks, markers, walker = self.get_level_sprites(self.levels[0])
+            
+            # draw all sprites
             all_sprites.draw(self.main_screen)
             pg.display.flip()
             
-            # control speed
-            self.clock.tick(self.fps)
-            
+            # --- game loop: one execution = one frame update
+            while True:
+                # --- get steer for walker
+                # get player steer if needed
+                if ai_pilot == None:
+                    steer = self.get_player_steer()
+                # get ai steer if needed
+                elif ai_pilot != None:
+                    pass
+                
+                # --- quit if needed: break out of game loop
+                if steer == QUIT:
+                    break
+                
+                # --- update walker sprite
+                walker.update(steer)
+                
+                # --- redraw screen
+                self.main_screen.fill(WHITE)
+                all_sprites.draw(self.main_screen)
+                pg.display.flip()
+                
+                # control speed
+                self.clock.tick(self.fps)
+                
+            # --- quit if needed: break out of replay loop
+            if steer == QUIT:
+                break
+                
         # quit game
         pg.quit()
         sys.exit()

@@ -5,11 +5,13 @@ Created on Thu Mar 21 21:20:44 2019
 @author: bettmensch
 """
 
+import pygame as pg
+
 # size of game window in pixel
 WINDOW_SIZE = (400,400)
 
 # window color
-WHITE = (255,255,255)
+WHITE = pg.Color(255,255,255)
 
 # frames per second
 FRAMES_PER_SECOND = 10
@@ -24,7 +26,7 @@ BORDER = 10
 BORDER_COLOR = (100,100,100)
 
 # WALKER color
-WALKER_IMAGE_PATH = "../image/walker_image.png"
+WALKER_IMAGE_PATH = "../image/walker_image.bmp"
 
 # marker color
 MARKER_COLOR = (0,50,200)
@@ -34,7 +36,7 @@ LEVELS = [{'blocks':[{'x':0,'y':0,'w':WINDOW_SIZE[0],'h':BORDER},
                      {'x':0,'y':WINDOW_SIZE[1]-BORDER,'w':WINDOW_SIZE[0],'h':BORDER},
                      {'x':int(WINDOW_SIZE[0]/2),'y':0,'w':BORDER,'h':int(WINDOW_SIZE[1]/2)}],
             'start':{'x':10,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':MARKER_COLOR},
-            'finish':{'x':WINDOW_SIZE[0]-BORDER,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':MARKER_COLOR}
+            'finish':{'x':WINDOW_SIZE[0]-MARKER_SIZE-BORDER,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':MARKER_COLOR}
             }]
 
 # speed of walker in pixel/ frame

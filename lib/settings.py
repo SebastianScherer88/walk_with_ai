@@ -29,14 +29,15 @@ BORDER_COLOR = (100,100,100)
 WALKER_IMAGE_PATH = "../image/walker_image.bmp"
 
 # marker color
-MARKER_COLOR = (0,50,200)
+START_COLOR = (0,50,200)
+FINISH_COLOR = (200,0,0)
 
 # level meta data: positions and sizes of bounding course boxes
 LEVELS = [{'blocks':[{'x':0,'y':0,'w':WINDOW_SIZE[0],'h':BORDER},
                      {'x':0,'y':WINDOW_SIZE[1]-BORDER,'w':WINDOW_SIZE[0],'h':BORDER},
                      {'x':int(WINDOW_SIZE[0]/2),'y':0,'w':BORDER,'h':int(WINDOW_SIZE[1]/2)}],
-            'start':{'x':10,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':MARKER_COLOR},
-            'finish':{'x':WINDOW_SIZE[0]-MARKER_SIZE-BORDER,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':MARKER_COLOR}
+            'start':{'x':10,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':START_COLOR},
+            'finish':{'x':WINDOW_SIZE[0]-MARKER_SIZE-BORDER,'y':int(WINDOW_SIZE[0]/4),'w':MARKER_SIZE,'h':MARKER_SIZE,'color':FINISH_COLOR}
             }]
 
 # speed of walker in pixel/ frame
@@ -47,6 +48,11 @@ D_THETA = 10
 
 # quit event flag
 QUIT = "QUIT"
+
+# level state flag
+WON = 'WON'
+LOST = 'LOST'
+CONTINUE = 'CONTINUE'
 
 # directional instructions for walker
 LEFT = 'LEFT'

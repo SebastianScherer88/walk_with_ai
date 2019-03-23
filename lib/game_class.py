@@ -120,10 +120,10 @@ class Walk_With_AI(object):
         blocks = pg.sprite.Group()
         [Block(all_sprites,blocks,**block_specs) for block_specs in level['blocks']]
         
-        # create marker sprite group
-        markers = pg.sprite.Group()
-        Block(all_sprites,markers,**level['start'])
-        Block(all_sprites,markers,**level['finish'])
+        # add marker sprites and create finish sprite group
+        finish = pg.sprite.Group()
+        Block(all_sprites,**level['start'])
+        Block(all_sprites,finish,**level['finish'])
         
         # create player sprite group
         walker = pg.sprite.Group()
@@ -133,7 +133,7 @@ class Walk_With_AI(object):
                         pos_y = level['start']['y'],
                         theta = 0)
         
-        return all_sprites,blocks, markers, walker
+        return all_sprites,blocks, finish, walker
     
     def get_player_steer(self):
         
@@ -152,6 +152,22 @@ class Walk_With_AI(object):
             steer = RIGHT
                          
         return steer
+    
+    def get_level_state(self,walker,blocks,finish):
+        
+        # check if game is lost - collision with blocks
+        blocks_hit = pg.sprite.spritecollide(walker,blocks,False)
+            
+        if len(blocks_hit) != 0:
+            return LOST
+        
+        # check if game is won - collision with finish
+        finish_reached = pg.sprite.spritecollide(walker,finish,False)
+            
+        if len(finish_reached) != 0:
+            return WON
+        
+        return CONTINUE
         
     def start(self,
               ai_pilot = None):
@@ -163,7 +179,7 @@ class Walk_With_AI(object):
             self.main_screen.fill(WHITE)
             
             # get sprite groups
-            all_sprites,blocks, markers, walker = self.get_level_sprites(self.levels[0])
+            all_sprites,blocks, finish, walker = self.get_level_sprites(self.levels[0])
             
             # draw all sprites
             all_sprites.draw(self.main_screen)
@@ -179,9 +195,14 @@ class Walk_With_AI(object):
                 elif ai_pilot != None:
                     pass
                 
-                # --- quit if needed: break out of game loop
-                if steer == QUIT:
+                # --- check for game end criteria
+                level_state = self.get_level_state(walker,blocks,finish)
+                
+                # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
+                if steer == QUIT or level_state in (WON,LOST):
                     break
+                elif level_state == CONTINUE:
+                    pass
                 
                 # --- update walker sprite
                 walker.update(steer)

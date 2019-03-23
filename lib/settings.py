@@ -8,7 +8,7 @@ Created on Thu Mar 21 21:20:44 2019
 import pygame as pg
 
 # size of game window in pixel
-WINDOW_SIZE = (400,400)
+WINDOW_SIZE = (100,90)
 
 # window color
 WHITE = pg.Color(255,255,255)

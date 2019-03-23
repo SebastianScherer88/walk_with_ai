@@ -10,6 +10,7 @@ to designated finish. Can be controlled by player or by specified AI.
 
 import sys
 import pygame as pg
+import numpy as np
 from pygame.sprite import Sprite
 from pygame.math import Vector2 as vec
 from settings import *
@@ -142,7 +143,6 @@ class Walk_With_AI(object):
                 return QUIT
             
         keys_pressed = pg.key.get_pressed()
-        #print(keys_pressed)
         
         if (keys_pressed[pg.K_LEFT] and keys_pressed[pg.K_RIGHT]) or (not keys_pressed[pg.K_LEFT] and not keys_pressed[pg.K_RIGHT]):
             steer = NONE
@@ -152,6 +152,15 @@ class Walk_With_AI(object):
             steer = RIGHT
                          
         return steer
+    
+    def get_ai_steer(self,ai_pilot,raw_level_history):
+        
+        # create input to ai pilot from raw level states
+        ai_input = ai_pilot.create_input(raw_level_history)
+        
+        ai_steer = ai_pilot.create_output(ai_input)
+        
+        return ai_steer
     
     def get_level_state(self,walker,blocks,finish):
         
@@ -170,7 +179,11 @@ class Walk_With_AI(object):
         return CONTINUE
         
     def start(self,
-              ai_pilot = None):
+              ai_pilot = None,
+              history_length = 10):
+        
+        # initialize raw level feature history
+        raw_level_history = []
         
         # create screen
         self.main_screen = pg.display.set_mode(self.window_size)
@@ -191,13 +204,20 @@ class Walk_With_AI(object):
                 steer = self.get_player_steer()
             # get ai steer if needed
             elif ai_pilot != None:
-                pass
+                steer = self.get_ai_steer(ai_pilot,raw_level_history)
             
             # --- check for game end criteria
             level_state = self.get_level_state(walker,blocks,finish)
             
+            # --- append to raw state history and truncate
+            raw_level_history.append(pg.surfarray.array3d(self.main_screen))
+            raw_level_history = raw_level_history[:history_length]
+            
             # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
-            if steer == QUIT or level_state in (WON,LOST):
+            if steer == QUIT:
+                break
+            elif level_state in (WON,LOST):
+                raw_level_history.append(level_state)
                 break
             elif level_state == CONTINUE:
                 pass
@@ -215,4 +235,40 @@ class Walk_With_AI(object):
                 
         # quit game
         pg.quit()
-        sys.exit()
+        #sys.exit()
+        
+        return raw_level_history[-(history_length+1):]
+    
+class AI_Walker(object):
+    '''Wrapper class to pass to Walk_With_AI that converts raw level state history
+    to model inputs and uses these inputs to create an actual steer.'''
+    
+    def __init__(self,model,feature_converter = None):
+        
+        # attach specified feature converter;
+        if feature_converter == None:
+            self.create_input = conv_featurize_latest_frame
+        else:
+            self.create_input = feature_converter
+            
+        # attach prediction function that calculates ai steer
+        self.create_output = model.predict
+        
+def conv_featurize_latest_frame(history_list):
+    '''Helper function that takes the latest element of the history list, and formats that
+    3-dim array into a 4-dim tensor that can be passed as an input for a convolutional neural
+    net as defined in the diy library.'''
+    
+    assert len(history_list) > 0
+    
+    # get 3-dim array representation of latest frame
+    current_frame = history_list[-1]
+    
+    # rearrange 3 dimensions into channel, widht, height
+    current_frame_rearr = np.transpose(current_frame,(2,0,1))
+    
+    # add batch size dimension as first dimension
+    input_frame = np.expand_dims(current_frame_rearr,axis=0)
+    
+    return input_frame
+    

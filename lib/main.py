@@ -11,7 +11,9 @@ def main():
     
     new_game = Walk_With_AI()
     
-    new_game.start()
+    raw_level_history = new_game.start()
+        
+    return raw_level_history
     
 if __name__ == "__main__":
-    main()
+    level_history = main()

@@ -16,12 +16,12 @@ def main():
     # build network
     neuralNet = FFNetwork(2)
     
-    kernelSize1 = 5
+    kernelSize1 = 10
     channels1 = 2
-    stride1 = 1
+    stride1 = 5
     padding1 = 'valid'
     
-    poolingSize2 = 2
+    poolingSize2 = 5
     stride2 = 2
     padding2 = 'valid'
     
@@ -34,7 +34,7 @@ def main():
     stride4 = 2
     padding4 = 'valid'
     
-    n4 = 1840
+    n4 = 336
     
     n_output = 3
     
@@ -68,6 +68,8 @@ def main():
     neuralNet.addFCLayer(n_output,activation='softmax')
     
     neuralNet.fixateNetwork(np.zeros((10,N_CHANNELS,WINDOW_SIZE[0],WINDOW_SIZE[1])))
+    
+    print(neuralNet)
     
     # prep network for inference without training it
     neuralNet.oneHotY(np.array([LEFT,NONE,RIGHT]))

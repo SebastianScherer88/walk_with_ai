@@ -8,7 +8,7 @@ Created on Thu Mar 21 21:20:44 2019
 import pygame as pg
 
 # size of game window in pixel
-WINDOW_SIZE = (100,90)
+WINDOW_SIZE = (200,300)
 
 # number of color channels
 N_CHANNELS = 3

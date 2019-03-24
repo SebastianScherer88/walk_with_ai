@@ -139,11 +139,7 @@ class Walk_With_AI(object):
         return all_sprites,blocks, finish, walker
     
     def get_player_steer(self):
-        
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                return QUIT
-            
+                    
         keys_pressed = pg.key.get_pressed()
         
         if (keys_pressed[pg.K_LEFT] and keys_pressed[pg.K_RIGHT]) or (not keys_pressed[pg.K_LEFT] and not keys_pressed[pg.K_RIGHT]):
@@ -156,7 +152,7 @@ class Walk_With_AI(object):
         return steer
     
     def get_ai_steer_and_log(self,ai_pilot,raw_level_history,level_state):
-        
+            
         # create input to ai pilot from raw level states
         ai_input = ai_pilot.create_input(raw_level_history)
         
@@ -210,6 +206,13 @@ class Walk_With_AI(object):
             # --- check for game end criteria
             level_state = self.get_level_state(walker,blocks,finish)
             
+            # --- check for manual closing of window
+            manual_close = False
+            
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    manual_close = True
+            
             # --- get steer for walker
             # get player steer if needed
             if ai_pilot == None:
@@ -219,7 +222,7 @@ class Walk_With_AI(object):
                 steer = self.get_ai_steer_and_log(ai_pilot,raw_level_history,level_state)
             
             # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
-            if steer == QUIT or level_state in (WON,LOST):
+            if manual_close or level_state in (WON,LOST):
                 break
             elif level_state == CONTINUE:
                 pass

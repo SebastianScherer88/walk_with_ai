@@ -162,12 +162,12 @@ class Walk_With_AI(object):
         
         return ai_steer
     
-    def get_level_state(self,walker,blocks,finish):
+    def get_level_state(self,walker,blocks,finish,frames_left):
         
         # check if game is lost - collision with blocks
         blocks_hit = pg.sprite.spritecollide(walker,blocks,False)
             
-        if len(blocks_hit) != 0:
+        if len(blocks_hit) != 0 or frames_left <= 0:
             return LOST
         
         # check if game is won - collision with finish
@@ -180,7 +180,12 @@ class Walk_With_AI(object):
         
     def start(self,
               ai_pilot = None,
-              history_length = 10):
+              history_length = 10,
+              max_sec = 20):
+        
+        # get max frames
+        frames_left = int(self.fps * max_sec)
+        print(frames_left)
         
         # initialize raw level feature history
         raw_level_history = []
@@ -198,13 +203,15 @@ class Walk_With_AI(object):
         
         # --- game loop: one execution = one frame update
         while True:
+            # update frame counter
+            frames_left -= 1
             
             # --- append to raw state history and truncate
             raw_level_history.append(pg.surfarray.array3d(self.main_screen))
             raw_level_history = raw_level_history[:history_length]
             
             # --- check for game end criteria
-            level_state = self.get_level_state(walker,blocks,finish)
+            level_state = self.get_level_state(walker,blocks,finish,frames_left)
             
             # --- check for manual closing of window
             manual_close = False

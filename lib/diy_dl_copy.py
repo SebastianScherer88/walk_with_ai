@@ -1585,7 +1585,7 @@ class PG(object):
         
     def train_network(self,
                       episode_generator,
-                      n_episodes = 100000,
+                      n_episodes = 1000,
                       learning_rate = 0.01,
                       episode_batch_size = 10,
                       verbose = False,
@@ -1603,7 +1603,7 @@ class PG(object):
             if verbose:
                 print("Running simulation to generate data | Episode " + str(i_episode+1) + " / " + str(n_episodes) + ".")
             # create this episodes training data and reinforcement coefficient
-            X_ep, y_ep, r_ep = episode_generator()
+            X_ep, y_ep, r_ep = episode_generator(self.ffnetwork)
             # convert y_e to one hot encoded class labels
             Y_ep = self.ffnetwork.oneHotY(y_ep)
             # apply reward/regret scaling to reinforcment coefficient

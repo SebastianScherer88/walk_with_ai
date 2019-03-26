@@ -8,7 +8,7 @@ Created on Thu Mar 21 22:58:02 2019
 from game_class import Walk_With_AI, AI_Walker
 from settings import *
 import numpy as np
-from diy_dl_copy import FFNetwork
+from diy_dl_copy import FFNetwork, PG
 
 def main():
     
@@ -78,13 +78,31 @@ def main():
     
     neuralNet.trained = True
     
-    # --- create pilot wrapper around conv net
-    neural_ai = AI_Walker(neuralNet)
+    # --- create policy gradient wrapper
+    # create epsiode generator function
+    def ai_walker_episode_generator(ai_network):
+        
+        ai_pilot = AI_Walker(ai_network)
+        
+        ai_log = Walk_With_AI().start(ai_pilot = ai_pilot).log
+        
+        X = np.concatenate(ai_log['X'],axis=0)
+        y = np.concatenate(ai_log['y'],axis=0).reshape(-1,1)
+        ri_coeff = ai_log['reinforce_coeff']
+        
+        return X,y,ri_coeff
     
-    # --- let conv ent pilot the game
-    new_game = Walk_With_AI()
+    # create pg object with above episode generator and neural net
+    policy_gradient_walker = PG(neuralNet)
     
-    neural_ai_with_log = new_game.start(ai_pilot = neural_ai)
+    # --- train network with policy gradient
+    policy_gradient_walker.train_network(episode_generator = ai_walker_episode_generator,
+                                         n_episodes = 100,
+                                         learning_rate = 0.01,
+                                         episode_batch_size = 10,
+                                         verbose = False,
+                                         reward = 1,
+                                         regret = 1)
         
     return neural_ai_with_log.log
     

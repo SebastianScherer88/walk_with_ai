@@ -34,9 +34,9 @@ def main():
     stride4 = 2
     padding4 = 'valid'
     
-    n4 = 336
+    n4 = 432
     
-    n_output = 3
+    n_output = 5
     
     neuralNet.addConvLayer(kernelHeight=kernelSize1,
                        kernelWidth=kernelSize1,
@@ -72,7 +72,7 @@ def main():
     print(neuralNet)
     
     # prep network for inference without training it
-    neuralNet.oneHotY(np.array([LEFT,NONE,RIGHT]))
+    neuralNet.oneHotY(np.array([LEFT,RIGHT,UP,DOWN,NONE]))
 
     neuralNet.initialize_layer_optimizers('sgd',eta = 0.001,gamma = 0.99,epsilon = 0.00000001,lamda = 0,batchSize = 1)
     
@@ -87,7 +87,7 @@ def main():
         ai_log = Walk_With_AI().start(ai_pilot = ai_pilot).log
         
         X = np.concatenate(ai_log['X'],axis=0)
-        y = np.concatenate(ai_log['y'],axis=0).reshape(-1,1)
+        y = np.array(ai_log['y']).reshape(-1,1)
         ri_coeff = ai_log['reinforce_coeff']
         
         return X,y,ri_coeff

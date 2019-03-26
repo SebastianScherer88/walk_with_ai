@@ -1164,7 +1164,7 @@ class FFNetwork(object):
                 layer.updateLayerParams(layerDcache,
                                         direction_coeff=reinforcement_coeff)
             
-    def predict(self,X):
+    def predict(self,X,distribution = False):
         '''If model is trained, performs forward prop and returns the prediction array.'''
         
         if not self.trained:
@@ -1174,16 +1174,17 @@ class FFNetwork(object):
         
         P = self.forwardProp(X)
         
-        # if classification model, return class array of shape (m,1)
-        if not str(type(self.classes_ordered)) == "<class 'NoneType'>":
+        # if classification model, default mode is to return argmax class array of shape (m,1)
+        if (not str(type(self.classes_ordered)) == "<class 'NoneType'>") and (distribution == False):
             # get indices (w.r.t classes_ordered ordering) of classes with max cond. prob.
             class_inds = np.argmax(P,axis=1).reshape(-1)
             # get predicted class labels in column array
             P_class = self.classes_ordered[class_inds].reshape(-1,1)
             
             return P_class
-        # if regression model, just return P
+        # if classification model but distribution specifically specified OR regression model, return outputs as is
         else:
+            #print("AAA")
             return P
     
 #----------------------------------------------------

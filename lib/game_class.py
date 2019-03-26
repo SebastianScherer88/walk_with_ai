@@ -14,6 +14,7 @@ import numpy as np
 from pygame.sprite import Sprite
 from pygame.math import Vector2 as vec
 from settings import *
+from functools import partial
 
 class Walker(Sprite):
     
@@ -30,42 +31,38 @@ class Walker(Sprite):
         
         # set positional and orientational attributes
         self.x = vec(pos_x,pos_y)
-        self.v = vec(D_X,0).rotate(theta)
-        self.theta = theta
         
         # set image and rect attributes
-        self.original_image = image_surface
-        self.original_image.set_colorkey(WHITE)
+        self.image = image_surface
+        self.image.set_colorkey(WHITE)
         
         # initialize position attributes by first call to update()
-        self.update(turn = NONE)
+        self.update(move = NONE)
 
     def update(self,
-               turn):
+               move):
         
         # sanity check commands
         #print("Turn:",turn)
         
-        assert turn in (LEFT,NONE,RIGHT)
+        assert move in (LEFT,RIGHT,UP,DOWN,NONE)
         
         # update angle according to steer
-        if turn == LEFT:
-            d_theta = D_THETA
-        elif turn == RIGHT:
-            d_theta = -D_THETA
-        elif turn == NONE:
-            d_theta = 0
-            
-        # update angle and velocity according to steer
-        self.theta += d_theta
-        self.v = self.v.rotate(-d_theta)
+        if move == LEFT:
+            v = vec(-D_X,0)
+        elif move == RIGHT:
+            v = vec(D_X,0)
+        elif move == UP:
+            v = vec(0,-D_X)
+        elif move == DOWN:
+            v =vec(0,D_X)
+        elif move == NONE:
+            v = vec(0,0)
         
         # get new position with updated velocity
-        self.x += self.v
+        self.x += v
         
-        # update image surface orientation as needed
-        self.image = pg.transform.rotate(self.original_image,
-                                         self.theta)
+        # update image surface position as needed
         self.rect = self.image.get_rect()
         self.rect.center = (int(self.x.x), int(self.x.y))
             
@@ -142,12 +139,22 @@ class Walk_With_AI(object):
                     
         keys_pressed = pg.key.get_pressed()
         
-        if (keys_pressed[pg.K_LEFT] and keys_pressed[pg.K_RIGHT]) or (not keys_pressed[pg.K_LEFT] and not keys_pressed[pg.K_RIGHT]):
-            steer = NONE
-        elif (keys_pressed[pg.K_LEFT] and not keys_pressed[pg.K_RIGHT]):
+        remain_dir_keys = {pg.K_LEFT:[pg.K_RIGHT,pg.K_UP,pg.K_DOWN],
+                           pg.K_RIGHT:[pg.K_LEFT,pg.K_UP,pg.K_DOWN],
+                           pg.K_UP:[pg.K_LEFT,pg.K_RIGHT,pg.K_DOWN],
+                           pg.K_DOWN:[pg.K_LEFT,pg.K_RIGHT,pg.K_UP]}
+        
+        # check for horizontal movement
+        if (keys_pressed[pg.K_LEFT] and all([(not keys_pressed[key]) for key in remain_dir_keys[pg.K_LEFT]])):
             steer = LEFT
-        elif (not keys_pressed[pg.K_LEFT] and keys_pressed[pg.K_RIGHT]):
+        elif (keys_pressed[pg.K_RIGHT] and all([(not keys_pressed[key]) for key in remain_dir_keys[pg.K_RIGHT]])):
             steer = RIGHT
+        elif (keys_pressed[pg.K_UP] and all([(not keys_pressed[key]) for key in remain_dir_keys[pg.K_UP]])):
+            steer = UP
+        elif (keys_pressed[pg.K_DOWN] and all([(not keys_pressed[key]) for key in remain_dir_keys[pg.K_DOWN]])):
+            steer = DOWN
+        else:
+            steer = NONE
                          
         return steer
     
@@ -185,7 +192,7 @@ class Walk_With_AI(object):
         
         # get max frames
         frames_left = int(self.fps * max_sec)
-        print(frames_left)
+        #print(frames_left)
         
         # initialize raw level feature history
         raw_level_history = []
@@ -263,16 +270,35 @@ class AI_Walker(object):
         else:
             self.create_input = feature_converter
             
-        # attach prediction function that calculates ai steer
-        self.create_output = model.predict
+        # attach model
+        self.model = model
         
         # initialize the ai pilot's log to be able to access the history created
         self.log = {'X':[],'y':[], 'reinforce_coeff':None}
+        
+    def create_output(self,feature_state):
+        # get class conditional distribution = classification network output without argmaxing
+        cond_class_distr = self.model.predict(feature_state,distribution = True)
+        
+        # sample action = move from class conditional distribution
+        #print(cond_class_distr)
+        #print(type(cond_class_distr))
+        
+        #print(self.model.classes_ordered)
+        #print(type(self.model.classes_ordered))
+        
+        output = self.model.classes_ordered[np.argmax(np.random.multinomial(1,cond_class_distr[0]))]
+        
+        #print(output)
+        
+        return output
         
     def update_log(self,ai_input,ai_steer,level_state):
         
         # update log with current input
         self.log['X'].append(ai_input)
+        
+        #print("ai steer:",ai_steer)
         
         # update log with current steer
         self.log['y'].append(ai_steer)

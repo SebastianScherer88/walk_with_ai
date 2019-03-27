@@ -174,8 +174,12 @@ class Walk_With_AI(object):
         # check if game is lost - collision with blocks
         blocks_hit = pg.sprite.spritecollide(walker,blocks,False)
             
-        if len(blocks_hit) != 0 or frames_left <= 0:
-            return LOST
+        if len(blocks_hit) != 0:
+            return LOST_COLLISION
+        
+        # check if game is lost - time is up
+        if frames_left <= 0:
+            return LOST_TIMEDOUT
         
         # check if game is won - collision with finish
         finish_reached = pg.sprite.spritecollide(walker,finish,False)
@@ -236,7 +240,7 @@ class Walk_With_AI(object):
                 steer = self.get_ai_steer_and_log(ai_pilot,raw_level_history,level_state)
             
             # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
-            if manual_close or level_state in (WON,LOST):
+            if manual_close or level_state in (WON,LOST_COLLISION,LOST_TIMEDOUT):
                 break
             elif level_state == CONTINUE:
                 pass
@@ -293,7 +297,7 @@ class AI_Walker(object):
         
         return output
         
-    def update_log(self,ai_input,ai_steer,level_state):
+    def update_log(self,ai_input,ai_steer,level_state,n_loss_cause = 10):
         
         # update log with current input
         self.log['X'].append(ai_input)
@@ -306,8 +310,16 @@ class AI_Walker(object):
         # populate reinforcement coefficient if appropriate - might need to revisit these
         if level_state == WON:
             self.log['reinforce_coeff'] = 1
-        elif level_state == LOST:
+        # in case of loss by collision, truncate data to last n frames which were the cause of the collision
+        # and should be discouraged; this will help the AI to avoid the boundaries even if it hasnt
+        # learned to aim at the finish marker
+        elif level_state == LOST_COLLISION:
+            self.log['reinforce_coeff'] = -1
+            self.log['X'] = self.log['X'][-n_loss_cause:]
+            self.log['y'] = self.log['y'][-n_loss_cause:]
+        elif level_state == LOST_TIMEDOUT:
             self.log['reinforce_coeff'] = 0
+            
         
 def conv_featurize_latest_frame(history_list):
     '''Helper function that takes the latest element of the history list, and formats that

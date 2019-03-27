@@ -56,7 +56,8 @@ QUIT = "QUIT"
 
 # level state flag
 WON = 'WON'
-LOST = 'LOST'
+LOST_COLLISION = 'LOST_COLLISION'
+LOST_TIMEDOUT = 'LOST_TIMEDOUT'
 CONTINUE = 'CONTINUE'
 
 # directional instructions for walker

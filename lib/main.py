@@ -97,14 +97,14 @@ def main():
     
     # --- train network with policy gradient
     policy_gradient_walker.train_network(episode_generator = ai_walker_episode_generator,
-                                         n_episodes = 100,
+                                         n_episodes = 1,
                                          learning_rate = 0.01,
                                          episode_batch_size = 10,
                                          verbose = False,
                                          reward = 1,
                                          regret = 1)
-        
-    return neural_ai_with_log.log
+    
+    return policy_gradient_walker
     
 if __name__ == "__main__":
-    log = main()
+    pg_walker = main()

@@ -188,10 +188,10 @@ class Walk_With_AI(object):
     def start(self,
               ai_pilot = None,
               history_length = 10,
-              max_sec = 20):
+              max_frames = 200):
         
         # get max frames
-        frames_left = int(self.fps * max_sec)
+        frames_left = max_frames
         #print(frames_left)
         
         # initialize raw level feature history
@@ -307,7 +307,7 @@ class AI_Walker(object):
         if level_state == WON:
             self.log['reinforce_coeff'] = 1
         elif level_state == LOST:
-            self.log['reinforce_coeff'] = -1
+            self.log['reinforce_coeff'] = 0
         
 def conv_featurize_latest_frame(history_list):
     '''Helper function that takes the latest element of the history list, and formats that

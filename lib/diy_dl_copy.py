@@ -1590,6 +1590,7 @@ class PG(object):
                       learning_rate = 0.01,
                       episode_batch_size = 10,
                       verbose = False,
+                      display_steps = 1,
                       reward = 1,
                       regret = 1):
         '''Trains network using policy gradients based on samples produced by the 
@@ -1610,13 +1611,21 @@ class PG(object):
             # apply reward/regret scaling to reinforcment coefficient
             if r_ep < 0:
                 r_ep *= regret
-            else:
+            elif r_ep > 0:
                 r_ep *= reward
+            else:
+                print("Simulation returned trivial reward. No parameter update needed | Episode " + str(i_episode+1) + " / " + str(n_episodes) + ".")
+                continue
             # --- train network on current batch
             n_batches = (X_ep.shape[0] // episode_batch_size) + 1
             if verbose:
-                print("Processing simulation data and updating AI | Episode" + str(i_episode+1) + " / " + str(n_episodes) + ".")
+                print("Processing simulation data and updating AI | Episode " + str(i_episode+1) + " / " + str(n_episodes) + ".")
             for i_batch in range(n_batches):
+                # progress statement if required
+                if ((i_batch+1) % display_steps) == 0 and verbose:
+                    print('Episode: ',str(i_episode+1),'/',str(n_episodes))
+                    print('Batch: ',str(i_batch+1),'/',str(n_batches))
+                    print('---------------------------------------------------')
                 #  forward prop
                 _ = self.ffnetwork.forwardProp(X_ep)
                 # backward prop including parameter updates

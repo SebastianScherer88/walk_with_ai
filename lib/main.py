@@ -34,7 +34,7 @@ def main():
     stride4 = 2
     padding4 = 'valid'
     
-    n4 = 432
+    n4 = 64
     
     n_output = 5
     
@@ -97,10 +97,10 @@ def main():
     
     # --- train network with policy gradient
     policy_gradient_walker.train_network(episode_generator = ai_walker_episode_generator,
-                                         n_episodes = 1,
+                                         n_episodes = 100000,
                                          learning_rate = 0.01,
                                          episode_batch_size = 10,
-                                         verbose = False,
+                                         verbose = True,
                                          reward = 1,
                                          regret = 1)
     

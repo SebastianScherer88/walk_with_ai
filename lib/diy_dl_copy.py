@@ -37,6 +37,8 @@ Created on Sat Mar 23 23:03:04 2019
 import numpy as np
 import pandas as pd
 from functools import partial
+import os
+import pickle
 
 #----------------------------------------------------
 # [1] Define some computational util functions
@@ -1186,6 +1188,31 @@ class FFNetwork(object):
         else:
             #print("AAA")
             return P
+        
+    def save(self,save_dir,model_name,verbose = True):
+        '''Helper function to save trained models for later use.'''
+        
+        # if directory doesnt exist already, create it
+        if (not os.path.isdir(save_dir)):
+            if verbose:
+                print("Directory " + str(save_dir) + " doesnt exist yet and will be created.")
+                
+            os.mkdir(save_dir)
+            
+        # create save path with specified name
+        full_save_path = os.path.join(save_dir,model_name)
+        
+        # save model as pickled object file
+        if verbose:
+            print("Saving model object in " + str(full_save_path))
+        
+        with open(full_save_path,'wb') as saved_model_file:
+            pickle.dump(self,saved_model_file)
+            
+        if verbose:
+            print("Finished saving model object in " + str(full_save_path))
+            
+        return full_save_path
     
 #----------------------------------------------------
 # [10] define genetic algorithm

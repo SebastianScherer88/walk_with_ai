@@ -757,18 +757,38 @@ class FcToConv(object):
 # [6] define convolution to fully connected reshaping layer class
 #----------------------------------------------------
 
-class ConvToFC(object):
+class FlattenConv(object):
     '''Transitional layer handling reshaping between convlayer activations -> fcLayer activations,
     and fcLayer activation derivatives -> convLayer activation derivatives.'''
     
-    def __init__(self,n):
+    def __init__(self,collapse=None,activation='identity',leak=0):
+        
+        assert activation in ['tanh','sigmoid','relu','identity','softmax']
+        
+        if activation == 'tanh':
+            self.activation = (tanh,activation)
+            self.Dactivation = Dtanh
+        elif activation == 'sigmoid': # possibly output layer, attach loss function just in case
+            self.activation = (sigmoid,activation)
+            self.Dactivation = Dsigmoid
+        elif activation == 'relu':
+            self.leak = leak
+            self.activation = (relu,activation)
+            self.Dactivation = Drelu
+        elif activation == 'identity':
+            self.activation = (identity,activation)
+            self.Dactivation = Didentity
+        elif activation == 'softmax': # definitely output layer, so no need for Dactivation
+            self.activation = (softmax,activation)
 
         self.cache = {'A':None,'DZ':None}
         self.previousLayer = None
         self.nextLayer = None
         
         self.sizeIn = None
-        self.sizeOut = [n]
+        assert collapse in ('mean',None)
+        self.collapse = collapse
+        self.sizeOut = None
         
         # set up optimization configs
         self.has_optimizable_params = False
@@ -786,7 +806,16 @@ class ConvToFC(object):
         A_p = self.previousLayer.cache['A']
         batchSize = A_p.shape[0]
         #A_c = A_p.reshape([batchSize].extend(self.sizeOut))
-        A_c = A_p.reshape([batchSize,self.sizeOut[0]])
+        
+        if self.collapse == None:
+            # unravel image tensor while retaining batch size dimension
+            Z_c = A_p.reshape([batchSize,self.sizeOut[0]])
+        elif self.collapse == 'mean':
+            # collapse along channel dimension, get rid of bogus dimension
+            Z_c = np.mean(A_p,axis=(2,3))[:,:,0]
+            
+        A_c = self.activation(Z_c)
+            
         #print("From within reshape (conv -> fc) layer's forwardProp:")
         #print("Shape of previous layer's activation:",A_p.shape)
         #print("Shape of current layer's activation:",A_c.shape)
@@ -795,25 +824,49 @@ class ConvToFC(object):
         
     def getDZ_c(self,DA_c):
         # calculates this layer's DZ. gets called from next layer in network during backprop
-        batchSize = DA_c.shape[0]
-        #dzShape = [batchSize].extend(self.sizeIn).extend(1)
-        dzShape = [batchSize,self.sizeIn[0],self.sizeIn[1],self.sizeIn[2],1]
-        self.cache['DZ'] = DA_c.reshape(dzShape)
+        A_c = self.cache['A']
+        if self.activation[1]=='relu':
+            self.cache['DZ'] = np.multiply(self.Dactivation(A_c,self.leak),DA_c)
+        else:
+            self.cache['DZ'] = np.multiply(self.Dactivation(A_c),DA_c)
         
     def backwardProp(self):
         # get stored activation values
         DZ_c = self.cache['DZ']
+        
+        #get some dimension parameters
+        batchSize = DZ_c.shape[0]
+        channels_p, width_p, height_p = self.sizeIn
+        shape_DA_p = [batchSize,channels_p,width_p,height_p,1]
+        
         # calculate DZ_p, i.e. DZ of previous layer in network
-        DA_p = DZ_c
+        if self.collapse == None:            
+            DA_p = DZ_c.reshape(shape_DA_p)
+        elif self.collapse == 'mean':
+            DZcDAp = np.ones(shape_DA_p) / (width_p * height_p)
+            DA_p = np.multiply(DZ_c[:,:,np.newaxis,np.newaxis,np.newaxis], DZcDAp)
+            
         self.previousLayer.getDZ_c(DA_p)
         
         return
     
     def makeReady(self,previousLayer=None,nextLayer=None):
+        '''Make layer aware of surrounding layers where appropriate, and sanity
+        check size parameters.'''
+        
+        # get neighbouring layers
         self.previousLayer = previousLayer
         self.sizeIn = self.previousLayer.sizeOut
         
         self.nextLayer = nextLayer
+        
+        # sanity check of parameters being passed through
+        if self.collapse == None:
+            # ensure dimensions are compatible with unraveling of input picture
+            self.sizeOut = [np.product(self.sizeIn)]
+        elif self.collapse in ('mean','max'):
+            # ensre dimensions are compatible with collapsing of input picture around channel axis
+            self.sizeOut == [self.sizeIn[0]]
 
 #----------------------------------------------------
 # [7] define dropout layer class

@@ -311,6 +311,9 @@ class FcLayer(object):
         self.initializeWeightBias()
         
     def initializeWeightBias(self):
+        print("Size in (fc layer):",self.sizeIn)
+        print("Size out (fc layer):",self.sizeOut)
+        
         n_p,n_c = self.sizeIn[0],self.sizeOut[0]
         self.Weight = np.random.randn(n_p,n_c) * 1 / (n_p + n_c)
         self.bias = np.zeros((1,n_c))
@@ -814,7 +817,14 @@ class FlattenConv(object):
             # collapse along channel dimension, get rid of bogus dimension
             Z_c = np.mean(A_p,axis=(2,3))[:,:,0]
             
-        A_c = self.activation(Z_c)
+            #print("Shape of Z_c:",Z_c.shape)
+            
+        # calculate this layer's activation in case of relu activaions
+        if self.activation[1]=='relu':
+            A_c = self.activation[0](Z_c,self.leak)
+        # calcualte this layer's activation for non-relu activation types
+        else:
+            A_c = self.activation[0](Z_c)
             
         #print("From within reshape (conv -> fc) layer's forwardProp:")
         #print("Shape of previous layer's activation:",A_p.shape)
@@ -839,12 +849,20 @@ class FlattenConv(object):
         channels_p, width_p, height_p = self.sizeIn
         shape_DA_p = [batchSize,channels_p,width_p,height_p,1]
         
+        #print("shape of DA_p:",shape_DA_p)
+        
         # calculate DZ_p, i.e. DZ of previous layer in network
         if self.collapse == None:            
             DA_p = DZ_c.reshape(shape_DA_p)
         elif self.collapse == 'mean':
             DZcDAp = np.ones(shape_DA_p) / (width_p * height_p)
-            DA_p = np.multiply(DZ_c[:,:,np.newaxis,np.newaxis,np.newaxis], DZcDAp)
+            DZ_c_array = DZ_c[:,:,np.newaxis,np.newaxis,np.newaxis]
+            
+            #print("Shape of DZ_c:",DZ_c_array.shape)
+            
+            DA_p = np.multiply(DZ_c_array, DZcDAp)
+            
+            #print("Shape of DA_p:",DA_p.shape)
             
         self.previousLayer.getDZ_c(DA_p)
         
@@ -864,9 +882,11 @@ class FlattenConv(object):
         if self.collapse == None:
             # ensure dimensions are compatible with unraveling of input picture
             self.sizeOut = [np.product(self.sizeIn)]
+            #print("Size out (conv flatten layer):",self.sizeOut)
         elif self.collapse in ('mean','max'):
             # ensre dimensions are compatible with collapsing of input picture around channel axis
-            self.sizeOut == [self.sizeIn[0]]
+            self.sizeOut = [self.sizeIn[0]]
+            #print("Size out (conv flatten layer):",self.sizeOut)
 
 #----------------------------------------------------
 # [7] define dropout layer class
@@ -1074,14 +1094,14 @@ class FFNetwork(object):
         else:
             print('The network has already been fixated. No further layers can be added.')
         
-    def addConvToFCReshapeLayer(self,n):
+    def addFlattenConvLayer(self,collapse=None,activation='identity',leak=0):
         '''Adds a reshaping layer to the neural network. Necessary to link up a convolutional layer with a 
         subsequent fully connected layer.'''
         
         if not self.finalState:
             # if network has not been fixated yet, create convolution layer
             # and add to network
-            shapeConvolutionalToFullyConnected = ConvToFC(n)
+            shapeConvolutionalToFullyConnected = FlattenConv(collapse=collapse,activation=activation,leak=leak)
             self.layers.append(shapeConvolutionalToFullyConnected)
         else:
             print('The network has already been fixated. No further layers can be added.')
@@ -1130,9 +1150,9 @@ class FFNetwork(object):
         lastLayer = self.layers[-1]
         
         # attach loss function to neural net depending on last fully connected layer's activation type
-        if lastLayer.activation[0] == sigmoid:
+        if lastLayer.activation[1] == 'sigmoid':
             self.loss = sigmoidLoss
-        elif lastLayer.activation[0] == softmax:
+        elif lastLayer.activation[1] == 'softmax':
             self.loss = softmaxLoss
         else:
             print('The last layer needs to have either "softmax" or "sigmoid" activation. Model was not fixated')

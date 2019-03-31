@@ -17,7 +17,7 @@ N_CHANNELS = 3
 WHITE = pg.Color(255,255,255)
 
 # frames per second
-FRAMES_PER_SECOND = 100
+FRAMES_PER_SECOND = 500
 
 # target size
 MARKER_SIZE = 15

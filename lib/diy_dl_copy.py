@@ -311,8 +311,8 @@ class FcLayer(object):
         self.initializeWeightBias()
         
     def initializeWeightBias(self):
-        print("Size in (fc layer):",self.sizeIn)
-        print("Size out (fc layer):",self.sizeOut)
+        #print("Size in (fc layer):",self.sizeIn)
+        #print("Size out (fc layer):",self.sizeOut)
         
         n_p,n_c = self.sizeIn[0],self.sizeOut[0]
         self.Weight = np.random.randn(n_p,n_c) * 1 / (n_p + n_c)

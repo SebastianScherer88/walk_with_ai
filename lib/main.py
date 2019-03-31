@@ -34,7 +34,7 @@ def main():
     stride4 = 2
     padding4 = 'valid'
     
-    n4 = 64
+    n4 = 30
     
     n_output = 5
     
@@ -61,7 +61,7 @@ def main():
                            padding=padding4,
                            poolingType='max')
     
-    neuralNet.addConvToFCReshapeLayer(n4)
+    neuralNet.addFlattenConvLayer()
     
     neuralNet.addFCLayer(n4,activation='tanh')
     

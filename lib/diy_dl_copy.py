@@ -116,6 +116,31 @@ def getBatches(X,Y,batchSize):
                           YShuffled[iBatch*batchSize:(iBatch+1)*batchSize])
     
         yield XBatch, YBatch, nBatches
+        
+def save_model(model,save_dir,model_name,verbose = True):
+    '''Helper function to save trained models for later use.'''
+    
+    # if directory doesnt exist already, create it
+    if (not os.path.isdir(save_dir)):
+        if verbose:
+            print("Directory " + str(save_dir) + " doesnt exist yet and will be created.")
+            
+        os.mkdir(save_dir)
+        
+    # create save path with specified name
+    full_save_path = os.path.join(save_dir,model_name)
+    
+    # save model as pickled object file
+    if verbose:
+        print("Saving model object in " + str(full_save_path))
+    
+    with open(full_save_path,'wb') as saved_model_file:
+        pickle.dump(model,saved_model_file)
+        
+    if verbose:
+        print("Finished saving model object in " + str(full_save_path))
+        
+    return full_save_path
     
 class SGD(object):
     '''Class representing the stochastic gradient descent with momentum algorithm'''
@@ -1190,29 +1215,9 @@ class FFNetwork(object):
             return P
         
     def save(self,save_dir,model_name,verbose = True):
-        '''Helper function to save trained models for later use.'''
+        '''Save model object as pickled file by calling the algorithm generic save function defined in section [1].'''
         
-        # if directory doesnt exist already, create it
-        if (not os.path.isdir(save_dir)):
-            if verbose:
-                print("Directory " + str(save_dir) + " doesnt exist yet and will be created.")
-                
-            os.mkdir(save_dir)
-            
-        # create save path with specified name
-        full_save_path = os.path.join(save_dir,model_name)
-        
-        # save model as pickled object file
-        if verbose:
-            print("Saving model object in " + str(full_save_path))
-        
-        with open(full_save_path,'wb') as saved_model_file:
-            pickle.dump(self,saved_model_file)
-            
-        if verbose:
-            print("Finished saving model object in " + str(full_save_path))
-            
-        return full_save_path
+        return save_model(model = self, save_dir = save_dir, model_name = model_name, verbose = verbose)
     
 #----------------------------------------------------
 # [10] define genetic algorithm
@@ -1660,6 +1665,11 @@ class PG(object):
                 
         return self.ffnetwork
     
+    def save_network(self,save_dir,model_name,verbose = True):
+        '''Save attached neural net model object as pickled file by calling the algorithm generic save function defined in section [1].'''
+        
+        return save_model(model = self.ffnetwork, save_dir = save_dir, model_name = model_name, verbose = verbose)
+    
 #----------------------------------------------------
 # [13] define GLM class for one-dimensional regression/classification
 #----------------------------------------------------
@@ -1932,3 +1942,8 @@ class GLM(object):
         self.lossHistory = lossHistory
         
         return 0
+    
+    def save(self,save_dir,model_name,verbose = True):
+        '''Save model object as pickled file by calling the algorithm generic save function defined in section [1].'''
+        
+        return save_model(model = self, save_dir = save_dir, model_name = model_name, verbose = verbose)

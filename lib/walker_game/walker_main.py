@@ -5,11 +5,25 @@ Created on Thu Mar 21 22:58:02 2019
 @author: bettmensch
 """
 
-from game_class import Walk_With_AI, AI_Walker
-from settings import *
+# --- imports
+# global imports
+from walker_settings import *
 import numpy as np
-from diy_dl_copy import FFNetwork, PG
+import os,sys,inspect
 
+# custom imports - sys path shenanigans needed
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) # working dir
+parentdir = os.path.dirname(currentdir) # lib dir of current repo: contains the game classes
+deep_learning_dir = os.path.join(os.path.dirname(os.path.dirname(parentdir)),"deep_learning_library") # dir in dl repo: contains dl classes
+
+sys.path.append(parentdir)
+sys.path.append(deep_learning_dir)
+
+from game_classes import Walk_With_AI, AI_Player
+from diy_deep_learning_library import FFNetwork, PG
+
+
+# --- main
 def main():
     
     # --- build conv net
@@ -82,7 +96,7 @@ def main():
     # create epsiode generator function
     def ai_walker_episode_generator(ai_network):
         
-        ai_pilot = AI_Walker(ai_network)
+        ai_pilot = AI_Player(ai_network)
         
         ai_log = Walk_With_AI().start(ai_pilot = ai_pilot).log
         

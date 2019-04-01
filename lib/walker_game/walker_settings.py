@@ -29,7 +29,7 @@ BORDER = 10
 BORDER_COLOR = (100,100,100)
 
 # WALKER color
-WALKER_IMAGE_PATH = "../image/walker_image.bmp"
+WALKER_IMAGE_PATH = "../../image/walker_image.bmp"
 
 # marker color
 START_COLOR = (0,50,200)

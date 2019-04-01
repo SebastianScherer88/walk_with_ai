@@ -13,7 +13,7 @@ import pygame as pg
 import numpy as np
 from pygame.sprite import Sprite
 from pygame.math import Vector2 as vec
-from settings import *
+from walker_settings import *
 from functools import partial
 
 class Walker(Sprite):
@@ -262,7 +262,7 @@ class Walk_With_AI(object):
         
         return ai_pilot
     
-class AI_Walker(object):
+class AI_Player(object):
     '''Wrapper class to pass to Walk_With_AI that converts raw level state history
     to model inputs and uses these inputs to create an actual steer.'''
     

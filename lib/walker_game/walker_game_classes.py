@@ -262,7 +262,7 @@ class Walk_With_AI(object):
         
         return ai_pilot
     
-class AI_Player(object):
+class AI_Walker(object):
     '''Wrapper class to pass to Walk_With_AI that converts raw level state history
     to model inputs and uses these inputs to create an actual steer.'''
     

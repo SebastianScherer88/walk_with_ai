@@ -8,6 +8,7 @@ Created on Thu Mar 21 22:58:02 2019
 # --- imports
 # global imports
 from walker_settings import *
+from walker_game_classes import Walk_With_AI, AI_Walker
 import numpy as np
 import os,sys,inspect
 
@@ -16,10 +17,8 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir) # lib dir of current repo: contains the game classes
 deep_learning_dir = os.path.join(os.path.dirname(os.path.dirname(parentdir)),"deep_learning_library") # dir in dl repo: contains dl classes
 
-sys.path.append(parentdir)
 sys.path.append(deep_learning_dir)
 
-from game_classes import Walk_With_AI, AI_Player
 from diy_deep_learning_library import FFNetwork, PG
 
 
@@ -96,7 +95,7 @@ def main():
     # create epsiode generator function
     def ai_walker_episode_generator(ai_network):
         
-        ai_pilot = AI_Player(ai_network)
+        ai_pilot = AI_Walker(ai_network)
         
         ai_log = Walk_With_AI().start(ai_pilot = ai_pilot).log
         
@@ -111,9 +110,9 @@ def main():
     
     # --- train network with policy gradient
     policy_gradient_walker.train_network(episode_generator = ai_walker_episode_generator,
-                                         n_episodes = 100000,
+                                         n_episodes = 10,
                                          learning_rate = 0.01,
-                                         episode_batch_size = 10,
+                                         episode_batch_size = 1,
                                          verbose = True,
                                          reward = 1,
                                          regret = 1)

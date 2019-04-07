@@ -11,7 +11,8 @@ import pygame as pg
 import numpy as np
 
 # size of game window in pixel
-WINDOW_SIZE = (400,300)
+WINDOW_SIZE = (600,450)
+FRAMES_PER_SECOND = 30
 
 # colors
 WHITE = pg.Color(255,255,255) # used for ball and paddles
@@ -19,8 +20,8 @@ BLACK = pg.Color(0,0,0) # used for background
 
 # pong paddle specs
 PADDLE_WIDTH = 10
-PADDLE_LENGTH = 40
-PADDLE_SPEED = 10 # speed in vertical direction in pixel/frame
+PADDLE_LENGTH = 70
+PADDLE_SPEED = 7 # speed in vertical direction in pixel/frame
 PADDLE_INSET_RATIO = 0.05
 
 # pong direction options
@@ -29,8 +30,9 @@ DOWN = 'DOWN'
 NONE = 'NONE'
 
 # ball specs
-BALL_RADIUS = 10
-MIN_BOUNCE_ANGLE_FACTOR = 0.8 # 0.8 ~ 10 degrees
+BALL_RADIUS = 8
+BALL_SPEED = 12 # ball speed in pixel/frame
+MIN_BOUNCE_ANGLE_FACTOR = 1.5 # 0.8 ~ 10 degrees
 BALL_INITIAL_MAX_ANGLE_TAN = 0.6
 
 # level state options

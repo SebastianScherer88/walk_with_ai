@@ -16,7 +16,7 @@ from pygame.math import Vector2 as vec
 from pong_settings import *
 from functools import partial
 
-class Paddle(object):
+class Paddle(Sprite):
     
     def __init__(self,
                  *groups,
@@ -33,7 +33,8 @@ class Paddle(object):
                         *groups)
         
         # create visual attributes
-        self.image = pg.Surface(width,length)
+        self.image = pg.Surface((width,length))
+        self.image.set_colorkey(BLACK)
         self.rect = self.image.fill(WHITE)
         self.rect.topleft = (pos_x,pos_y)
         
@@ -63,7 +64,7 @@ class Paddle(object):
         
         self.rect.topleft = (int(self.x.x),int(self.x.y))
         
-class Ball(object):
+class Ball(Sprite):
     
     def __init__(self,
                  *groups,
@@ -73,6 +74,7 @@ class Ball(object):
                  v_y= np.sqrt(2),
                  radius = BALL_RADIUS,
                  color = WHITE,
+                 speed = BALL_SPEED,
                  background = BLACK,
                  window_size = WINDOW_SIZE):
         
@@ -83,20 +85,20 @@ class Ball(object):
         self.window_size = WINDOW_SIZE
         
         # create visual attributes
-        self.image = pg.Surface(2*radius,2*radius)
+        self.image = pg.Surface((2*radius,2*radius))
         self.rect = self.image.fill(background)
         self.rect.topleft = (pos_x,pos_y)
         
         # add circle to image, make edges transparent
         pg.draw.circle(self.image,color,(radius,radius),radius)
-        self.image.set_colorkey(color)
+        self.image.set_colorkey(background)
         
         # create positional attributes
-        self.speed = BALL_SPEED
+        self.speed = speed
         self.x = vec(pos_x,pos_y)
         
         self.v = vec(v_x,v_y)
-        self.v = BALL_SPEED * self.v / self.v.get_length()
+        self.v = speed * self.v.normalize()
         
     def update(self):
         '''Only checks for out of bounds w.r.t height. The collisions with
@@ -123,14 +125,13 @@ class Ball(object):
         position to the bouncing paddle's center, while speed is kept constant.'''
         
         # get outbound angle
-        d_norm = min_angle_factor * (self.y - paddle.rect.centerx) / (paddle.rect.height/2 + self.rect.height) # normalize relative position to [-1,1]
-        alpha_out = np.arccos(d_norm) # get
+        d_norm = min_angle_factor * (self.rect.centery - paddle.rect.centery) / (paddle.rect.height + self.rect.height) # normalize relative position to [-1,1]
         
         # adjust velocity ofr horizontal & vertical bounce
         sign_x = np.sign(self.v.x)
         
-        self.v.y = BALL_SPEED * np.cos(alpha_out)
-        self.v.x = sign_x * (-1) * BALL_SPEED * np.sin(alpha_out)
+        self.v.y = self.speed * d_norm
+        self.v.x = sign_x * (-1) * self.speed * np.sin(np.arccos(d_norm))
         
         # adjust position to edge of paddle
         if self.x.x > self.window_size[0] / 2:
@@ -155,6 +156,7 @@ class Pong(object):
                          'paddle_length':PADDLE_LENGTH,
                          'ball_radius':BALL_RADIUS},
                 params = {'paddle_speed':PADDLE_SPEED,
+                          'ball_speed':BALL_SPEED,
                           'paddle_inset_ratio':PADDLE_INSET_RATIO}):
         
         # initialize pygame window
@@ -166,7 +168,7 @@ class Pong(object):
         
         # some game params
         self.window_size = window_size
-        self.paddle_insets = {'oppnent':int(self.window_size[0] * paddle_inset_ratio),
+        self.paddle_insets = {'opponent':int(self.window_size[0] * paddle_inset_ratio),
                               'player':int(self.window_size[0] * (1 - paddle_inset_ratio))}
         self.colors = colors
         self.sizes = sizes
@@ -201,8 +203,9 @@ class Pong(object):
                                window_height = self.window_size[1])
         
         # create ball
-        ball_x, ball_y = int((self.window_size[0] - BALL_RADIUS) / 2), int((self.window_size[1] - BALL_RADIUS) / 2)
-        ball_vy = np.random([i for i in range(1,11)])
+        ball_x = int((self.window_size[0] - self.sizes['ball_radius']) / 2)
+        ball_y = int((self.window_size[1] - self.sizes['ball_radius']) / 2)
+        ball_vy = np.random.choice([i for i in range(1,11)])
         ball_vx = np.random.choice([1,-1]) * ball_vy * np.random.uniform(0.1,BALL_INITIAL_MAX_ANGLE_TAN)
         
         ball = Ball(all_sprites,
@@ -212,10 +215,11 @@ class Pong(object):
                     v_y= ball_vy,
                     radius = self.sizes['ball_radius'],
                     color = self.colors['ball'],
+                    speed = self.params['ball_speed'],
                     background = self.colors['background'],
                     window_size = self.window_size)
         
-        return all_sprites, opponent_paddle, player_paddle, ball
+        return all_sprites, paddles, opponent_paddle, player_paddle, ball
     
     def get_player_steer(self):
                     
@@ -242,11 +246,11 @@ class Pong(object):
         
         return ai_steer
     
-    def get_opponent_steer(self,ball,opponent_paddle):
+    def get_opponent_steer(self,ball,opponent_paddle,stat_margin = 0.25):
         
-        if opponent_paddle.rect.centery > ball.rect.centery:
+        if opponent_paddle.rect.centery - ball.rect.centery > stat_margin * opponent_paddle.rect.height:
             steer = UP
-        elif opponent_paddle.rect.centery < ball.rect.centery:
+        elif opponent_paddle.rect.centery - ball.rect.centery < stat_margin * opponent_paddle.rect.height:
             steer = DOWN
         else:
             steer = NONE
@@ -283,10 +287,10 @@ class Pong(object):
         
         # create screen
         self.main_screen = pg.display.set_mode(self.window_size)
-        self.main_screen.fill(WHITE)
+        self.main_screen.fill(self.colors['background'])
         
         # get sprite groups
-        all_sprites, opponent_paddle, player_paddle, ball = self.get_level_sprites()
+        all_sprites, paddles, opponent_paddle, player_paddle, ball = self.get_level_sprites()
         
         # draw all sprites
         all_sprites.draw(self.main_screen)
@@ -333,12 +337,13 @@ class Pong(object):
             ball.update()
             
             # --- check for ball vs paddle bounces
-            bounce_paddle = spritecollide(ball, paddles, False, pg.sprite.collide_mask)
-            if bounce_paddle != None:
-                ball.bounce_off_paddle(bounce_paddle)
+            bounce_paddles = pg.sprite.spritecollide(ball, paddles, False, pg.sprite.collide_mask)
+
+            if len(bounce_paddles) != 0:
+                ball.bounce_off_paddle(bounce_paddles[0])
             
             # --- redraw screen
-            self.main_screen.fill(WHITE)
+            self.main_screen.fill(self.colors['background'])
             all_sprites.draw(self.main_screen)
             pg.display.flip()
             

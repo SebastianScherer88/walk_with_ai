@@ -25,7 +25,8 @@ class Paddle(object):
                  width = PADDLE_WIDTH,
                  length = PADDLE_LENGTH,
                  speed = PADDLE_SPEED,
-                 color = WHITE):
+                 color = WHITE,
+                 window_height = WINDOW_SIZE[1]):
         
         # create base sprite instance
         Sprite.__init__(self,
@@ -39,6 +40,7 @@ class Paddle(object):
         # create positional attributes
         self.x = vec(pos_x,pos_y)
         self.v_up = vec(0,-speed)
+        self.window_height = window_height
         
     def update(self,
                move):
@@ -53,6 +55,12 @@ class Paddle(object):
             v = -self.v_up
         
         self.x += v
+        
+        if self.x.y < 0:
+            self.x.y = 0
+        elif self.x.y > self.window_height - self.rect.height:
+            self.x.y = self.window_height - self.rect.height
+        
         self.rect.topleft = (int(self.x.x),int(self.x.y))
         
 class Ball(object):
@@ -95,14 +103,15 @@ class Ball(object):
         paddles are handled in separate method.'''
         
         # if too high, bring back down and bounce
-        if self.rect.top < 0:
+        if self.x.y < 0:
             self.x.y = 0
             self.v.y = -self.v.y
             # or if too low, bring back up and bounce
-        elif self.rect.bottom > self.window_size[1]:
-            self.x.y = self.window_size[1]
+        elif self.x.y > self.window_size[1] - self.rect.height:
+            self.x.y = self.window_size[1] - self.rect.height
             self.v.y = -self.v.y
         
+        # update position
         self.x += self.v
         self.rect.topleft = (int(self.x.x),int(self.x.y))
         
@@ -123,8 +132,221 @@ class Ball(object):
         self.v.y = BALL_SPEED * np.cos(alpha_out)
         self.v.x = sign_x * (-1) * BALL_SPEED * np.sin(alpha_out)
         
-        # adjust position
-        if self.rect.centerx > self.window_size[0] / 2:
-            self.rect.right = paddle.rect.left
-        elif self.rect.centerx < self.window_size[0] / 2:
-            self.rect.left = paddle.rect.right
+        # adjust position to edge of paddle
+        if self.x.x > self.window_size[0] / 2:
+            self.x.x = paddle.rect.left - self.rect.width
+        elif self.x.x < self.window_size[0] / 2:
+            self.x.x = paddle.rect.right
+            
+        self.rect.topleft = self.x
+        
+class Pong(object):
+    '''Pong game class. Starts a new game of pong with player controls or AI pilot.'''
+    
+    def __init__(self,
+                 frames_per_second = FRAMES_PER_SECOND,
+                 window_size = WINDOW_SIZE,
+                 paddle_inset_ratio = PADDLE_INSET_RATIO,
+                 colors = {'player':WHITE,
+                           'opponent':WHITE,
+                           'ball':WHITE,
+                           'background':BLACK},
+                sizes = {'paddle_width':PADDLE_WIDTH,
+                         'paddle_length':PADDLE_LENGTH,
+                         'ball_radius':BALL_RADIUS},
+                params = {'paddle_speed':PADDLE_SPEED,
+                          'paddle_inset_ratio':PADDLE_INSET_RATIO}):
+        
+        # initialize pygame window
+        pg.init()
+        
+        # get game clock
+        self.clock = pg.time.Clock()
+        self.fps = frames_per_second
+        
+        # some game params
+        self.window_size = window_size
+        self.paddle_insets = {'oppnent':int(self.window_size[0] * paddle_inset_ratio),
+                              'player':int(self.window_size[0] * (1 - paddle_inset_ratio))}
+        self.colors = colors
+        self.sizes = sizes
+        self.params = params
+        
+    def get_level_sprites(self):
+        '''Creates and returns the paddle sprites and the ball sprite.'''
+        
+        # create sprite groups
+        all_sprites = pg.sprite.Group()
+        paddles = pg.sprite.Group()
+        
+        # create paddles
+        paddle_y = int((self.window_size[1] - self.sizes['paddle_length']) / 2)
+        
+        opponent_paddle = Paddle(all_sprites, paddles,
+                                 pos_x = self.paddle_insets['opponent'],
+                                 pos_y = paddle_y,
+                                 width = self.sizes['paddle_width'],
+                                 length = self.sizes['paddle_length'],
+                                 speed = self.params['paddle_speed'],
+                                 color = self.colors['opponent'],
+                                 window_height = self.window_size[1])
+        
+        player_paddle = Paddle(all_sprites, paddles,
+                               pos_x = self.paddle_insets['player'],
+                               pos_y = paddle_y,
+                               width = self.sizes['paddle_width'],
+                               length = self.sizes['paddle_length'],
+                               speed = self.params['paddle_speed'],
+                               color = self.colors['player'],
+                               window_height = self.window_size[1])
+        
+        # create ball
+        ball_x, ball_y = int((self.window_size[0] - BALL_RADIUS) / 2), int((self.window_size[1] - BALL_RADIUS) / 2)
+        ball_vy = np.random([i for i in range(1,11)])
+        ball_vx = np.random.choice([1,-1]) * ball_vy * np.random.uniform(0.1,BALL_INITIAL_MAX_ANGLE_TAN)
+        
+        ball = Ball(all_sprites,
+                    pos_x = ball_x,
+                    pos_y = ball_y,
+                    v_x = ball_vx,
+                    v_y= ball_vy,
+                    radius = self.sizes['ball_radius'],
+                    color = self.colors['ball'],
+                    background = self.colors['background'],
+                    window_size = self.window_size)
+        
+        return all_sprites, opponent_paddle, player_paddle, ball
+    
+    def get_player_steer(self):
+                    
+        keys_pressed = pg.key.get_pressed()
+        
+        # check for horizontal movement
+        if (keys_pressed[pg.K_DOWN] and not keys_pressed[pg.K_UP]):
+            steer = DOWN
+        elif (keys_pressed[pg.K_UP] and not keys_pressed[pg.K_DOWN]):
+            steer = UP
+        else:
+            steer = NONE
+                         
+        return steer
+    
+    def get_ai_steer_and_log(self,ai_pilot,raw_level_history,level_state):
+            
+        # create input to ai pilot from raw level states
+        ai_input = ai_pilot.create_input(raw_level_history)
+        
+        ai_steer = ai_pilot.create_output(ai_input)
+        
+        ai_pilot.update_log(ai_input,ai_steer,level_state)
+        
+        return ai_steer
+    
+    def get_opponent_steer(self,ball,opponent_paddle):
+        
+        if opponent_paddle.rect.centery > ball.rect.centery:
+            steer = UP
+        elif opponent_paddle.rect.centery < ball.rect.centery:
+            steer = DOWN
+        else:
+            steer = NONE
+            
+        return steer
+    
+    def get_level_state(self,ball,frames_left):
+        
+        ball_pos = ball.rect.centerx
+
+        # check if game is lost - ball is on the right, beyond player paddle            
+        if ball_pos > self.window_size[0]:
+            return LOST
+        # check if game is lost - ball is on the left, beyond opponent paddle
+        elif ball_pos < 0: 
+            return WON
+        # check if game is lost - time is up
+        if frames_left <= 0:
+            return TIMEDOUT
+        
+        return CONTINUE
+        
+    def start(self,
+              ai_pilot = None,
+              history_length = 10,
+              max_frames = 200):
+        
+        # get max frames
+        frames_left = max_frames
+        #print(frames_left)
+        
+        # initialize raw level feature history
+        raw_level_history = []
+        
+        # create screen
+        self.main_screen = pg.display.set_mode(self.window_size)
+        self.main_screen.fill(WHITE)
+        
+        # get sprite groups
+        all_sprites, opponent_paddle, player_paddle, ball = self.get_level_sprites()
+        
+        # draw all sprites
+        all_sprites.draw(self.main_screen)
+        pg.display.flip()
+        
+        # --- game loop: one execution = one frame update
+        while True:
+            # update frame counter
+            frames_left -= 1
+            
+            # --- append to raw state history and truncate
+            raw_level_history.append(pg.surfarray.array3d(self.main_screen))
+            raw_level_history = raw_level_history[:history_length]
+            
+            # --- check for game end criteria
+            level_state = self.get_level_state(ball,frames_left)
+            
+            # --- check for manual closing of window
+            manual_close = False
+            
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    manual_close = True
+                    
+            # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
+            if manual_close or level_state in (WON,LOST,TIMEDOUT):
+                break
+            elif level_state == CONTINUE:
+                pass
+            
+            # --- get steer for paddles
+            # get player steer if needed
+            if ai_pilot == None:
+                player_steer = self.get_player_steer()
+            # get ai steer if needed
+            elif ai_pilot != None:
+                player_steer = self.get_ai_steer_and_log(ai_pilot,raw_level_history,level_state)
+                
+            opponent_steer = self.get_opponent_steer(ball,opponent_paddle)
+            
+            # --- update paddles & ball
+            player_paddle.update(player_steer)
+            opponent_paddle.update(opponent_steer)
+            ball.update()
+            
+            # --- check for ball vs paddle bounces
+            bounce_paddle = spritecollide(ball, paddles, False, pg.sprite.collide_mask)
+            if bounce_paddle != None:
+                ball.bounce_off_paddle(bounce_paddle)
+            
+            # --- redraw screen
+            self.main_screen.fill(WHITE)
+            all_sprites.draw(self.main_screen)
+            pg.display.flip()
+            
+            # control speed
+            self.clock.tick(self.fps)
+                
+        # quit game
+        pg.quit()
+        #sys.exit()
+        
+        return ai_pilot

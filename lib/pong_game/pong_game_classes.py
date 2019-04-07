@@ -182,7 +182,7 @@ class Pong_with_AI(object):
         # some game params
         self.window_size = window_size
         self.paddle_insets = {'opponent':int(self.window_size[0] * paddle_inset_ratio),
-                              'player':int(self.window_size[0] * (1 - paddle_inset_ratio))}
+                              'player':int(self.window_size[0] * (1 - paddle_inset_ratio) - sizes['paddle_width'])}
         self.colors = colors
         self.sizes = sizes
         self.params = params
@@ -222,8 +222,8 @@ class Pong_with_AI(object):
         ball_vy = np.sin(ball_angle)
         ball_vx = np.random.choice([1,-1]) * np.cos(ball_angle)
         
-        print(BALL_INITIAL_MAX_ANGLE)
-        print("initial ball velocity:", ball_vx,ball_vy)
+        #print(BALL_INITIAL_MAX_ANGLE)
+        #print("initial ball velocity:", ball_vx,ball_vy)
         
         ball = Ball(all_sprites,
                     pos_x = ball_x,
@@ -263,7 +263,7 @@ class Pong_with_AI(object):
         
         return ai_steer
     
-    def get_opponent_steer(self,ball,opponent_paddle,stat_margin = 0.5):
+    def get_opponent_steer(self,ball,opponent_paddle,stat_margin = OPPONENT_STATIONARY_MARGIN):
         
         if opponent_paddle.rect.centery - ball.rect.centery > (stat_margin * opponent_paddle.rect.height):
             steer = UP

@@ -23,6 +23,7 @@ PADDLE_WIDTH = 10
 PADDLE_LENGTH = 70
 PADDLE_SPEED = 8 # speed in vertical direction in pixel/frame
 PADDLE_INSET_RATIO = 0.05
+OPPONENT_STATIONARY_MARGIN = 0.25
 
 # pong direction options
 UP = 'UP'

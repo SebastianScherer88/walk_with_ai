@@ -124,8 +124,21 @@ class Ball(Sprite):
         The outgoing bounce angle is determined by the collision point's relative
         position to the bouncing paddle's center, while speed is kept constant.'''
         
+        # only bounce off if ball isnt unreasonable past paddle surface
+        diff_of_centers = self.rect.centerx - paddle.rect.centerx
+        
+        if (self.x.x > self.window_size[0] / 2 and diff_of_centers > 0) or (self.x.x < self.window_size[0] / 2 and diff_of_centers < 0):
+            return
+        
         # get outbound angle
         d_norm = min_angle_factor * (self.rect.centery - paddle.rect.centery) / (paddle.rect.height + self.rect.height) # normalize relative position to [-1,1]
+        
+        if d_norm < 0:
+            d_norm = max(-1,d_norm)
+        elif d_norm > 0:
+            d_norm = min(1,d_norm)
+        
+        #print('Cos of outgoing angle:',d_norm)
         
         # adjust velocity ofr horizontal & vertical bounce
         sign_x = np.sign(self.v.x)
@@ -141,7 +154,7 @@ class Ball(Sprite):
             
         self.rect.topleft = self.x
         
-class Pong(object):
+class Pong_with_AI(object):
     '''Pong game class. Starts a new game of pong with player controls or AI pilot.'''
     
     def __init__(self,
@@ -205,8 +218,12 @@ class Pong(object):
         # create ball
         ball_x = int((self.window_size[0] - self.sizes['ball_radius']) / 2)
         ball_y = int((self.window_size[1] - self.sizes['ball_radius']) / 2)
-        ball_vy = np.random.choice([i for i in range(1,11)])
-        ball_vx = np.random.choice([1,-1]) * ball_vy * np.random.uniform(0.1,BALL_INITIAL_MAX_ANGLE_TAN)
+        ball_angle = np.random.uniform(-BALL_INITIAL_MAX_ANGLE,BALL_INITIAL_MAX_ANGLE)
+        ball_vy = np.sin(ball_angle)
+        ball_vx = np.random.choice([1,-1]) * np.cos(ball_angle)
+        
+        print(BALL_INITIAL_MAX_ANGLE)
+        print("initial ball velocity:", ball_vx,ball_vy)
         
         ball = Ball(all_sprites,
                     pos_x = ball_x,
@@ -246,14 +263,17 @@ class Pong(object):
         
         return ai_steer
     
-    def get_opponent_steer(self,ball,opponent_paddle,stat_margin = 0.25):
+    def get_opponent_steer(self,ball,opponent_paddle,stat_margin = 0.5):
         
-        if opponent_paddle.rect.centery - ball.rect.centery > stat_margin * opponent_paddle.rect.height:
+        if opponent_paddle.rect.centery - ball.rect.centery > (stat_margin * opponent_paddle.rect.height):
             steer = UP
-        elif opponent_paddle.rect.centery - ball.rect.centery < stat_margin * opponent_paddle.rect.height:
+        elif opponent_paddle.rect.centery - ball.rect.centery < -(stat_margin * opponent_paddle.rect.height):
             steer = DOWN
         else:
             steer = NONE
+           
+        #print("opponent center - ball center:",opponent_paddle.rect.centery - ball.rect.centery)
+        #print("opponent steer:",steer)
             
         return steer
     

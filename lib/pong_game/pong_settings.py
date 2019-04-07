@@ -21,7 +21,7 @@ BLACK = pg.Color(0,0,0) # used for background
 # pong paddle specs
 PADDLE_WIDTH = 10
 PADDLE_LENGTH = 70
-PADDLE_SPEED = 7 # speed in vertical direction in pixel/frame
+PADDLE_SPEED = 8 # speed in vertical direction in pixel/frame
 PADDLE_INSET_RATIO = 0.05
 
 # pong direction options
@@ -32,8 +32,8 @@ NONE = 'NONE'
 # ball specs
 BALL_RADIUS = 8
 BALL_SPEED = 12 # ball speed in pixel/frame
-MIN_BOUNCE_ANGLE_FACTOR = 1.5 # 0.8 ~ 10 degrees
-BALL_INITIAL_MAX_ANGLE_TAN = 0.6
+MIN_BOUNCE_ANGLE_FACTOR = 2 # 0.8 ~ 10 degrees
+BALL_INITIAL_MAX_ANGLE = np.pi/4
 
 # level state options
 WON = 'WON'

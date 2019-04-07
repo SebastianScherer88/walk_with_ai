@@ -5,12 +5,12 @@ Created on Sun Apr  7 11:34:48 2019
 @author: bettmensch
 """
 
-from pong_game_classes import Pong
+from pong_game_classes import Pong_with_AI
 from pong_settings import *
 
 def main():
     
-    pong_game = Pong()
+    pong_game = Pong_with_AI()
     
     n_second = 100
     

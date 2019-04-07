@@ -254,12 +254,15 @@ class Pong_with_AI(object):
     
     def get_ai_steer_and_log(self,ai_pilot,raw_level_history,level_state):
             
-        # create input to ai pilot from raw level states
-        ai_input = ai_pilot.create_input(raw_level_history)
-        
-        ai_steer = ai_pilot.create_output(ai_input)
-        
-        ai_pilot.update_log(ai_input,ai_steer,level_state)
+        if len(raw_level_history) >= 2:
+            # create input to ai pilot from raw level states
+            ai_input = ai_pilot.create_input(raw_level_history)
+            
+            ai_steer = ai_pilot.create_output(ai_input)
+            
+            ai_pilot.update_log(ai_input,ai_steer,level_state)
+        else:
+            ai_steer = NONE
         
         return ai_steer
     
@@ -327,6 +330,7 @@ class Pong_with_AI(object):
             
             # --- check for game end criteria
             level_state = self.get_level_state(ball,frames_left)
+            #print('Level state (from within game):',level_state)
             
             # --- check for manual closing of window
             manual_close = False
@@ -334,12 +338,6 @@ class Pong_with_AI(object):
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     manual_close = True
-                    
-            # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
-            if manual_close or level_state in (WON,LOST,TIMEDOUT):
-                break
-            elif level_state == CONTINUE:
-                pass
             
             # --- get steer for paddles
             # get player steer if needed
@@ -350,6 +348,12 @@ class Pong_with_AI(object):
                 player_steer = self.get_ai_steer_and_log(ai_pilot,raw_level_history,level_state)
                 
             opponent_steer = self.get_opponent_steer(ball,opponent_paddle)
+            
+            # --- quit if needed: break out of game loop in case of manual quit, level win or level loss
+            if manual_close or level_state in (WON,LOST,TIMEDOUT):
+                break
+            elif level_state == CONTINUE:
+                pass
             
             # --- update paddles & ball
             player_paddle.update(player_steer)
@@ -375,3 +379,85 @@ class Pong_with_AI(object):
         #sys.exit()
         
         return ai_pilot
+    
+class AI_Pong(object):
+    '''Wrapper class to pass to Pong_With_AI that converts raw level state history
+    to model inputs and uses these inputs to create an actual steer.'''
+    
+    def __init__(self,model,feature_converter = None,level_state_rewards = REWARDS_MAP):
+        
+        # attach specified feature converter;
+        if feature_converter == None:
+            self.create_input = conv_featurize_difference_last_two_frames
+        else:
+            self.create_input = feature_converter
+            
+        # attach model
+        self.model = model
+        
+        # attach rewards map
+        self.rewards = level_state_rewards
+        
+        # initialize the ai pilot's log to be able to access the history created
+        self.log = {'X':[],'y':[], 'reinforce_coeff':None}
+        
+    def create_output(self,feature_state):
+        # get class conditional distribution = classification network output without argmaxing
+        cond_class_distr = self.model.predict(feature_state,distribution = True)
+        
+        # sample action = move from class conditional distribution
+        #print(cond_class_distr)
+        #print(type(cond_class_distr))
+        
+        #print(self.model.classes_ordered)
+        #print(type(self.model.classes_ordered))
+        
+        output = self.model.classes_ordered[np.argmax(np.random.multinomial(1,cond_class_distr[0]))]
+        
+        #print(output)
+        
+        return output
+        
+    def update_log(self,ai_input,ai_steer,level_state,n_loss_cause = 100):
+        
+        # update log with current input
+        self.log['X'].append(ai_input)
+        
+        #print("ai steer:",ai_steer)
+        
+        # update log with current steer
+        self.log['y'].append(ai_steer)
+        
+        # populate reinforcement coefficient if appropriate - might need to revisit these
+        if level_state in (WON,LOST,TIMEDOUT):
+            self.log['reinforce_coeff'] = self.rewards[level_state]
+
+            # cut down losing trajectory to most recent mistakes more likely to have caused the loss            
+            if level_state == LOST:
+                self.log['X'] = self.log['X'][-n_loss_cause:]
+                self.log['y'] = self.log['y'][-n_loss_cause:]
+                
+        #print(len(self.log['X']))
+        #print(len(self.log['y']))
+        #print('Level state:',level_state)
+        #print(self.log['reinforce_coeff'])
+            
+        
+def conv_featurize_difference_last_two_frames(history_list):
+    '''Helper function that takes the difference of the two latest elements of the history list, and formats that
+    3-dim array into a 4-dim tensor that can be passed as an input for a convolutional neural
+    net as defined in the diy library.'''
+    
+    assert len(history_list) >= 2
+    
+    # get 3-dim array representation of latest frame
+    difference_frame = history_list[-1] - history_list[-2]
+    
+    # rearrange 3 dimensions into channel, widht, height
+    difference_frame_rearr = np.transpose(difference_frame,(2,0,1))
+    
+    # add batch size dimension as first dimension
+    input_frame = np.expand_dims(difference_frame_rearr,axis=0)
+    
+    return input_frame
+    

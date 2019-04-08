@@ -106,7 +106,7 @@ def main():
         return X,y,ri_coeff
     
     # if reloading trained pilot, set this to number of episodes already trained
-    pages_trained = 0
+    pages_trained = 13000
     
     for training_chapter in range(TRAINING_CHAPTERS):
         

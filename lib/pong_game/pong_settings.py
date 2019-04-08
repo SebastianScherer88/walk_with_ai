@@ -12,7 +12,7 @@ import numpy as np
 
 # size of game window in pixel
 WINDOW_SIZE = (200,180)
-FRAMES_PER_SECOND = 20
+FRAMES_PER_SECOND = 200
 
 # colors
 WHITE = pg.Color(255,255,255) # used for ball and paddles
@@ -48,7 +48,7 @@ REWARDS_MAP = {WON: 1,
                TIMEDOUT: 0}
 N_CHANNELS = 3
 
-TRAINING_PAGES = 1000
-TRAINING_CHAPTERS = 10
+TRAINING_PAGES = 3000
+TRAINING_CHAPTERS = 4
 
 PONG_MODEL_DIR = 'C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models'

@@ -39,8 +39,8 @@ def ai_pong_episode_generator(ai_network):
     return X,y,ri_coeff
 
 # create Pong training function
-def teach_pong(seasons = 5,
-               episodes_per_season = 100,
+def teach_pong(seasons = N_TRAINING_SEASONS,
+               episodes_per_season = N_TRAINING_EPISODES,
                from_scratch = False,
                model_dir = PONG_MODEL_DIR):
     '''Teaches the game Pong to convolutional net based AI for the specified
@@ -50,7 +50,7 @@ def teach_pong(seasons = 5,
     # --- get model
     if not from_scratch:
         # load oldest model if possible
-        neural_net, taught_episodes = load_oldest_model(game = 'pong', model_dir = '')
+        neural_net, taught_episodes = load_oldest_model(game = 'pong', model_dir = model_dir)
     else:
         neural_net = None
     
@@ -60,16 +60,17 @@ def teach_pong(seasons = 5,
                                          input_height = WINDOW_SIZE[1],
                                          input_depth = N_CHANNELS,
                                          target_label_list = [UP,DOWN,NONE])
+        taught_episodes = 0
     
     # --- train model
-    for season in range(N_TRAINING_SEASONS):
+    for season in range(seasons):
         
         # create pg object with above episode generator and neural net
         policy_gradient_pong = PG(neural_net)
     
         # train network with policy gradient
         policy_gradient_pong.train_network(episode_generator = ai_pong_episode_generator,
-                                           n_episodes = N_TRAINING_EPISODES,
+                                           n_episodes = episodes_per_season,
                                            learning_rate = 0.01,
                                            episode_batch_size = 10,
                                            verbose = True,
@@ -78,8 +79,13 @@ def teach_pong(seasons = 5,
 
         # save checkpoint model ~ AI
         neural_net = policy_gradient_pong.ffnetwork
-        neural_net_name = '_'.join(['pong_pilot', str((season + 1) * N_TRAINING_EPISODES), 'epsiodes'])
-        neural_net.save(save_dir = PONG_MODEL_DIR, model_name = neural_net_name)
+        epsiodes_so_far = taught_episodes + (season + 1) * episodes_per_season
+        neural_net_name = '_'.join(['pong_pilot', str(epsiodes_so_far), 'epsiodes'])
+        neural_net.save(save_dir = model_dir, model_name = neural_net_name)
+        
+def main():
+    
+    teach_pong(from_scratch = False)
     
 if __name__ == "__main__":
     main()

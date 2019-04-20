@@ -104,7 +104,7 @@ def load_oldest_model(game,model_dir):
     
     if len(game_models) != 0:
         # get path to most trained model
-        episodes_trained = list(map(lambda model_name: model_name.split('_')[2],game_models))
+        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_models))
         pos = np.argmax(episodes_trained)
         game_model_name, episodes_trained = game_models[pos], episodes_trained[pos]
         game_model_path = os.path.join(model_dir,game_model_name)

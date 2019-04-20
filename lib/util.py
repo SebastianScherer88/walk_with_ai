@@ -116,7 +116,17 @@ def load_oldest_model(game,model_dir):
         game_model, episodes_trained = None, 0
         
     return game_model, episodes_trained
+
+def save_trained_model(game,model_dir,trained_model,n_total_episodes):
+    '''Helper function that saves a convolutional model object in designated dir,
+    versioned with the total number of episodes trained.'''
+    
+    # create model name
+    model_name = '_'.join([game,'pilot',str(n_total_episodes),'episodes'])
+    
+    # save model
+    trained_model.save(save_dir = model_dir,model_name = model_name)
         
-        
+    return
     
     

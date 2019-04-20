@@ -48,7 +48,7 @@ REWARDS_MAP = {WON: 1,
                TIMEDOUT: 0}
 N_CHANNELS = 3
 
-TRAINING_PAGES = 3000
-TRAINING_CHAPTERS = 4
+N_TRAINING_SEASONS = 4
+N_TRAINING_EPISODES = 3000
 
 PONG_MODEL_DIR = 'C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models'

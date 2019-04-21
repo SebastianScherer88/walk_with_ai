@@ -8,6 +8,7 @@ Created on Tue Apr  9 19:40:52 2019
 import pickle
 import numpy as np
 import os,sys,inspect
+from argparse import ArgumentParser
 
 # custom imports - sys path shenanigans needed
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) # working dir
@@ -129,4 +130,23 @@ def save_trained_model(game,model_dir,trained_model,n_total_episodes):
         
     return
     
+def get_command_line_args(season_default = 5,
+                          episode_default = 1000):
+    parser = ArgumentParser()
+    parser.add_argument("-s", "--seasons",
+                        dest="n_seasons",
+                        type = int,
+                        help="Number of training seasons -> n_seasons",
+                        default = season_default)
+    parser.add_argument("-e","--episodes",
+                        dest="n_episodes",
+                        type = int,
+                        help="Number of training simulations per season -> n_episodes",
+                        default = episode_default)
+    parser.add_argument("-n", "--train_new_model",
+                        action="store_true", dest="train_from_scratch", default=False,
+                        help="Train new model from scratch -> train_from_scratch")
     
+    args = parser.parse_args().__dict__
+    
+    return args

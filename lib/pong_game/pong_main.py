@@ -7,6 +7,7 @@ Created on Sun Apr  7 11:34:48 2019
 # --- imports
 # global imports
 from pong_game_classes import Pong_with_AI, AI_Pong
+from functools import partial
 from pong_settings import *
 import numpy as np
 import os,sys,inspect
@@ -25,12 +26,12 @@ sys.path.append(deep_learning_dir)
 from diy_deep_learning_library import FFNetwork, PG
 
 # create episode generator function
-def ai_pong_episode_generator(ai_network):
+def ai_pong_episode_generator(ai_network, visual):
     
     ai_pilot = AI_Pong(ai_network)
     
     #ai_log = Pong_with_AI().start(ai_pilot = None).log
-    ai_log = Pong_with_AI().start(ai_pilot = ai_pilot).log
+    ai_log = Pong_with_AI().start(ai_pilot = ai_pilot, visual = visual).log
     
     X = np.concatenate(ai_log['X'],axis=0)
     y = np.array(ai_log['y']).reshape(-1,1)
@@ -42,7 +43,8 @@ def ai_pong_episode_generator(ai_network):
 def teach_pong(seasons = N_TRAINING_SEASONS,
                episodes_per_season = N_TRAINING_EPISODES,
                from_scratch = False,
-               model_dir = PONG_MODEL_DIR):
+               model_dir = PONG_MODEL_DIR,
+               visual = True):
     '''Teaches the game Pong to convolutional net based AI for the specified
     number of episodes and seasons. Can pick up trained models to continue training,
     or train a new one from scratch. Saves model after each season.'''
@@ -69,7 +71,7 @@ def teach_pong(seasons = N_TRAINING_SEASONS,
         policy_gradient_pong = PG(neural_net)
     
         # train network with policy gradient
-        policy_gradient_pong.train_network(episode_generator = ai_pong_episode_generator,
+        policy_gradient_pong.train_network(episode_generator = partial(ai_pong_episode_generator,visual = visual),
                                            n_episodes = episodes_per_season,
                                            learning_rate = 0.01,
                                            episode_batch_size = 10,
@@ -92,7 +94,8 @@ def main():
     
     teach_pong(from_scratch = parsed_args['train_from_scratch'],
                seasons = parsed_args['n_seasons'],
-               episodes_per_season = parsed_args['n_episodes'])
+               episodes_per_season = parsed_args['n_episodes'],
+               visual = parsed_args['visual_mode'])
     
 if __name__ == "__main__":
     main()

@@ -342,9 +342,10 @@ class Pong_with_AI(object):
             # --- check for manual closing of window
             manual_close = False
             
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    manual_close = True
+            if visual:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        manual_close = True
             
             # --- get steer for paddles
             # get player steer if needed

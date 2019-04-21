@@ -51,4 +51,4 @@ N_CHANNELS = 3
 N_TRAINING_SEASONS = 5
 N_TRAINING_EPISODES = 7
 
-PONG_MODEL_DIR = 'C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models'
+PONG_MODEL_DIR = '/home/ubuntu/GitReps/walk_with_ai/models'

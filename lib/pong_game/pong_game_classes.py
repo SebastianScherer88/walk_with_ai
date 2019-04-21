@@ -299,7 +299,8 @@ class Pong_with_AI(object):
     def start(self,
               ai_pilot = None,
               history_length = 10,
-              max_frames = 200):
+              max_frames = 200,
+              visual = True):
         
         # get max frames
         frames_left = max_frames
@@ -308,8 +309,12 @@ class Pong_with_AI(object):
         # initialize raw level feature history
         raw_level_history = []
         
-        # create screen
-        self.main_screen = pg.display.set_mode(self.window_size)
+        # create screen according to whether video is available or not
+        if visual:
+            self.main_screen = pg.display.set_mode(self.window_size)
+        else:
+            self.main_screen = pg.Surface(self.window_size)
+            
         self.main_screen.fill(self.colors['background'])
         
         # get sprite groups
@@ -317,7 +322,9 @@ class Pong_with_AI(object):
         
         # draw all sprites
         all_sprites.draw(self.main_screen)
-        pg.display.flip()
+        
+        if visual:
+            pg.display.flip()
         
         # --- game loop: one execution = one frame update
         while True:
@@ -369,7 +376,9 @@ class Pong_with_AI(object):
             # --- redraw screen
             self.main_screen.fill(self.colors['background'])
             all_sprites.draw(self.main_screen)
-            pg.display.flip()
+                
+            if visual:
+                pg.display.flip()
             
             # control speed
             self.clock.tick(self.fps)

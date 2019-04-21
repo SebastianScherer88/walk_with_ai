@@ -146,6 +146,9 @@ def get_command_line_args(season_default = 5,
     parser.add_argument("-n", "--train_new_model",
                         action="store_true", dest="train_from_scratch", default=False,
                         help="Train new model from scratch -> train_from_scratch")
+    parser.add_argument("-nv", "--non_visual_mode",
+                        action="store_false", dest="visual_mode", default=True,
+                        help="Do not visualize training - needed on linux VMs !-> visual_mode")
     
     args = parser.parse_args().__dict__
     

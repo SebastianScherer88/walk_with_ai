@@ -13,7 +13,7 @@ import pygame as pg
 import numpy as np
 from pygame.sprite import Sprite
 from pygame.math import Vector2 as vec
-from settings import *
+from walker_settings import *
 from functools import partial
 
 class Walker(Sprite):

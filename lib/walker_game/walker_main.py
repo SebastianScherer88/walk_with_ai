@@ -5,11 +5,24 @@ Created on Thu Mar 21 22:58:02 2019
 @author: bettmensch
 """
 
-from game_class import Walk_With_AI, AI_Walker
-from settings import *
+# --- imports
+# global imports
+from walker_settings import *
+from walker_game_classes import Walk_With_AI, AI_Walker
 import numpy as np
-from diy_dl_copy import FFNetwork, PG
+import os,sys,inspect
 
+# custom imports - sys path shenanigans needed
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) # working dir
+parentdir = os.path.dirname(currentdir) # lib dir of current repo: contains the game classes
+deep_learning_dir = os.path.join(os.path.dirname(os.path.dirname(parentdir)),"deep_learning_library") # dir in dl repo: contains dl classes
+
+sys.path.append(deep_learning_dir)
+
+from diy_deep_learning_library import FFNetwork, PG
+
+
+# --- main
 def main():
     
     # --- build conv net
@@ -34,7 +47,7 @@ def main():
     stride4 = 2
     padding4 = 'valid'
     
-    n4 = 64
+    n4 = 30
     
     n_output = 5
     
@@ -61,7 +74,7 @@ def main():
                            padding=padding4,
                            poolingType='max')
     
-    neuralNet.addConvToFCReshapeLayer(n4)
+    neuralNet.addFlattenConvLayer()
     
     neuralNet.addFCLayer(n4,activation='tanh')
     
@@ -97,9 +110,9 @@ def main():
     
     # --- train network with policy gradient
     policy_gradient_walker.train_network(episode_generator = ai_walker_episode_generator,
-                                         n_episodes = 100000,
+                                         n_episodes = 10,
                                          learning_rate = 0.01,
-                                         episode_batch_size = 10,
+                                         episode_batch_size = 1,
                                          verbose = True,
                                          reward = 1,
                                          regret = 1)

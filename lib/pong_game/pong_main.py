@@ -19,7 +19,7 @@ deep_learning_dir = os.path.join(os.path.dirname(os.path.dirname(parentdir)),"de
 
 # game generic util functions
 sys.path.append(parentdir)
-from util import create_and_prep_net, load_models, get_command_line_args
+from util import create_and_prep_net, load_models, get_teach_command_line_args
 
 # diy deep learning lib from other repo
 sys.path.append(deep_learning_dir)
@@ -103,7 +103,7 @@ def assess_pong(n_assessments = 100,
         
 def main():
     
-    parsed_args = get_command_line_args(season_default = N_TRAINING_SEASONS,
+    parsed_args = get_teach_command_line_args(season_default = N_TRAINING_SEASONS,
                                         episode_default = N_TRAINING_EPISODES)
     
     print(parsed_args)

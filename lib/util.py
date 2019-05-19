@@ -139,7 +139,7 @@ def save_trained_model(game,model_dir,trained_model,n_total_episodes):
         
     return
     
-def get_command_line_args(season_default = 5,
+def get_teach_command_line_args(season_default = 5,
                           episode_default = 1000):
     parser = ArgumentParser()
     parser.add_argument("-s", "--seasons",

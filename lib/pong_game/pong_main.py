@@ -85,22 +85,6 @@ def teach_pong(seasons = N_TRAINING_SEASONS,
         neural_net_name = '_'.join(['pong_pilot', str(epsiodes_so_far), 'epsiodes'])
         neural_net.save(save_dir = model_dir, model_name = neural_net_name)
         
-def assess_pong(n_assessments = 100,
-                model_name = '',
-                model_dir = PONG_MODEL_DIR,
-                visual = True):
-    '''Loads a model (if not specified, defaults to most recent model) and assesses it
-    by plugging it into the Pong game as an AI and recording the ratio of wins/plays.'''
-    
-    # --- get model
-    if model_name == '':
-        # load oldest model if possible
-        neural_net, taught_episodes = load_models(game = 'pong', model_dir = model_dir)
-    else:
-        neural_net = None
-    
-    return
-        
 def main():
     
     parsed_args = get_teach_command_line_args(season_default = N_TRAINING_SEASONS,

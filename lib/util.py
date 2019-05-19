@@ -92,7 +92,7 @@ def create_and_prep_net(input_width,
     
     return neural_net
 
-def load_oldest_model(game,model_dir):
+def load_models(game,model_dir,load_oldest_only = True):
     '''Helper function that loads the most trained walker/pong model from specified model
     directory. Also retains the number of episodes the loaded model has been trained on.'''
     
@@ -100,23 +100,32 @@ def load_oldest_model(game,model_dir):
     assert game in ('pong','walker')
     assert os.path.isdir(model_dir)
     
-    # get oldest model for given game/experiment
-    game_models = [model_name for model_name in os.listdir(model_dir) if game in model_name]
+    # get models names and number of episodes trained
+    game_model_names = [model_name for model_name in os.listdir(model_dir) if game in model_name]
+    episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_model_names))
     
-    if len(game_models) != 0:
-        # get path to most trained model
-        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_models))
-        pos = np.argmax(episodes_trained)
-        game_model_name, episodes_trained = game_models[pos], episodes_trained[pos]
-        game_model_path = os.path.join(model_dir,game_model_name)
+    # load models object(s) together with their training age
+    if len(game_model_names) != 0:
+        if load_oldest_only:
+            # pick oldest model only
+            pos = np.argmax(episodes_trained)
+            game_model_names, episodes_trained = list(game_model_names[pos]), list(episodes_trained[pos])
+            
+        # get model object(s)
+        game_model_paths = [os.path.join(model_dir,game_model_name) for game_model_name in game_model_names]
+        game_models = []
         
-        # load most trained model
-        with open(game_model_path,'rb') as game_model_file:
-            game_model = pickle.load(game_model_file)
+        for game_model_path in game_model_paths:
+            with open(game_model_path,'rb') as game_model_file:
+                game_models.append(pickle.load(game_model_file))
     else:
-        game_model, episodes_trained = None, 0
+        game_models, episodes_trained = list(None), list(0)
         
-    return game_model, episodes_trained
+    # return only the last model's data if specified
+    if load_oldest_only:
+        return game_models[0], episodes_trained[0]
+        
+    return game_models, episodes_trained
 
 def save_trained_model(game,model_dir,trained_model,n_total_episodes):
     '''Helper function that saves a convolutional model object in designated dir,

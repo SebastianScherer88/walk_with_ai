@@ -19,7 +19,7 @@ deep_learning_dir = os.path.join(os.path.dirname(os.path.dirname(parentdir)),"de
 
 # game generic util functions
 sys.path.append(parentdir)
-from util import create_and_prep_net, load_oldest_model, get_command_line_args
+from util import create_and_prep_net, load_models, get_command_line_args
 
 # diy deep learning lib from other repo
 sys.path.append(deep_learning_dir)
@@ -52,7 +52,7 @@ def teach_pong(seasons = N_TRAINING_SEASONS,
     # --- get model
     if not from_scratch:
         # load oldest model if possible
-        neural_net, taught_episodes = load_oldest_model(game = 'pong', model_dir = model_dir)
+        neural_net, taught_episodes = load_models(game = 'pong', model_dir = model_dir)
     else:
         neural_net = None
     
@@ -84,6 +84,22 @@ def teach_pong(seasons = N_TRAINING_SEASONS,
         epsiodes_so_far = taught_episodes + (season + 1) * episodes_per_season
         neural_net_name = '_'.join(['pong_pilot', str(epsiodes_so_far), 'epsiodes'])
         neural_net.save(save_dir = model_dir, model_name = neural_net_name)
+        
+def assess_pong(n_assessments = 100,
+                model_name = '',
+                model_dir = PONG_MODEL_DIR,
+                visual = True):
+    '''Loads a model (if not specified, defaults to most recent model) and assesses it
+    by plugging it into the Pong game as an AI and recording the ratio of wins/plays.'''
+    
+    # --- get model
+    if model_name == '':
+        # load oldest model if possible
+        neural_net, taught_episodes = load_models(game = 'pong', model_dir = model_dir)
+    else:
+        neural_net = None
+    
+    return
         
 def main():
     

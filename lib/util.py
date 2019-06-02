@@ -133,17 +133,24 @@ def create_and_prep_net(net_type = 'conv',
     
     return neural_net
 
-def load_models(game,model_dir,load_oldest_only = True):
+def load_models(game,net_type,model_dir,load_oldest_only = True):
     '''Helper function that loads the most trained walker/pong model from specified model
     directory. Also retains the number of episodes the loaded model has been trained on.'''
     
     # sanity check inputs
     assert game in ('pong','walker')
+    assert net_type in ('conv','mlp')
     assert os.path.isdir(model_dir)
     
     # get models names and number of episodes trained
-    game_model_names = [model_name for model_name in os.listdir(model_dir) if game in model_name]
-    episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_model_names))
+    if game == 'walker':
+        game_model_names = [model_name for model_name in os.listdir(model_dir) if game in model_name]
+        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_model_names))
+    # pong game support different net architecture types and needs special treatment
+    elif game == 'pong':
+        game_model_pattern = '_'.join([game,'pilot',net_type])
+        game_model_names = [model_name for model_name in os.listdir(model_dir) if game_model_pattern in model_name]
+        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[3]),game_model_names))
     
     # load models object(s) together with their training age
     if len(game_model_names) != 0:

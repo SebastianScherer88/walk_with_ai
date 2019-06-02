@@ -168,20 +168,9 @@ def load_models(game,model_dir,load_oldest_only = True):
         
     return game_models, episodes_trained
 
-def save_trained_model(game,model_dir,trained_model,n_total_episodes):
-    '''Helper function that saves a convolutional model object in designated dir,
-    versioned with the total number of episodes trained.'''
-    
-    # create model name
-    model_name = '_'.join([game,'pilot',str(n_total_episodes),'episodes'])
-    
-    # save model
-    trained_model.save(save_dir = model_dir,model_name = model_name)
-        
-    return
-    
+   
 def get_teach_command_line_args(season_default = 5,
-                          episode_default = 1000):
+                                episode_default = 1000):
     parser = ArgumentParser()
     parser.add_argument("-s", "--seasons",
                         dest="n_seasons",
@@ -196,6 +185,10 @@ def get_teach_command_line_args(season_default = 5,
     parser.add_argument("-n", "--train_new_model",
                         action="store_true", dest="train_from_scratch", default=False,
                         help="Train new model from scratch -> train_from_scratch")
+    parser.add_argument('-nt','--net_type',
+                        default='conv',
+                        help='Specify the network architecture. Can be convolutional or strictly feed forward.',
+                        choices = ['conv','mlp'])
     parser.add_argument("-nv", "--non_visual_mode",
                         action="store_false", dest="visual_mode", default=True,
                         help="Do not visualize training - needed on linux VMs !-> visual_mode")

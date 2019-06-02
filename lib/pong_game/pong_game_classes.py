@@ -301,9 +301,9 @@ class Pong_with_AI(object):
               history_length = 10,
               max_frames = 200,
               visual = True,
-              level_history_type = 'raw'):
+              level_history_type = 'conv'):
         
-        assert level_history_type in ('raw','positional')
+        assert level_history_type in ('conv','mlp')
         
         # get max frames
         frames_left = max_frames
@@ -335,10 +335,11 @@ class Pong_with_AI(object):
             frames_left -= 1
             
             # --- append to state history and truncate
-            if level_history_type == 'raw':
+            if level_history_type == 'conv':
                 level_history.append(pg.surfarray.array3d(self.main_screen))
-            elif level_history_type == 'positional':
-                positional_level_snapshot = np.concatenate(opponent_paddle.x.y,player_paddle.x.y,ball.x,ball.v,axis=0)
+            elif level_history_type == 'mlp':
+                y_array = np.array([opponent_paddle.x.y,player_paddle.x.y])
+                positional_level_snapshot = np.concatenate([y_array,ball.x,ball.v]).reshape(1,-1)
                 level_history.append(positional_level_snapshot)
             
             level_history = level_history[:history_length]
@@ -405,13 +406,14 @@ class AI_Pong(object):
     '''Wrapper class to pass to Pong_With_AI that converts raw level state history
     to model inputs and uses these inputs to create an actual steer.'''
     
-    def __init__(self,model,feature_converter = None,level_state_rewards = REWARDS_MAP):
+    def __init__(self,model,net_type='conv',level_state_rewards = REWARDS_MAP):
         
-        # attach specified feature converter;
-        if feature_converter == None:
+        # attach specified feature converter
+        assert (net_type in ('conv','mlp'))
+        if net_type == 'conv':
             self.create_input = conv_featurize_difference_last_two_frames
-        else:
-            self.create_input = feature_converter
+        elif net_type == 'mlp':
+            self.create_input = normalize_positional_stats
             
         # attach model
         self.model = model
@@ -497,17 +499,15 @@ def normalize_positional_stats(history_list,
     current_positional_state = history_list[-1]
     
     # scale the y coordinates to [-1,1]
-    y_coord_pos = np.array(True,True,False,True,False,False)
-    current_positional_state_normed = (current_positional_state[0,y_coord_pos] - 0.5 * window_height) / window_height
+    y_coord_pos = np.array([True,True,False,True,False,False])
+    current_positional_state[0,y_coord_pos] = (current_positional_state[0,y_coord_pos] - 0.5 * window_height) / window_height
     
     # scale the x coordinates to [-1,1]
-    x_coord_pos = np.array(False,False,True,False,False,False)
-    current_positional_state_normed = (current_positional_state_normed[0,x_coord_pos] - 0.5 * window_width) / window_width
+    x_coord_pos = np.array([False,False,True,False,False,False])
+    current_positional_state[0,x_coord_pos] = (current_positional_state[0,x_coord_pos] - 0.5 * window_width) / window_width
     
     # scale the ball velocity coordinates to [-1,1]
-    ball_v_coord_pos = np.array(False,False,False,False,True,True)
-    current_positional_state_normed = (current_positional_state_normed[0,ball_v_coord_pos] - 0.5 * ball_speed) / ball_speed
+    ball_v_coord_pos = np.array([False,False,False,False,True,True])
+    current_positional_state[0,ball_v_coord_pos] = (current_positional_state[0,ball_v_coord_pos] - 0.5 * ball_speed) / ball_speed
     
-    input_frame = current_positional_state_normed
-    
-    return input_frame
+    return current_positional_state

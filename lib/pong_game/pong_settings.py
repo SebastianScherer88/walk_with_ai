@@ -52,5 +52,3 @@ POSITIONAL_FEATURES_N = 6
 
 N_TRAINING_SEASONS = 5
 N_TRAINING_EPISODES = 7
-
-PONG_MODEL_DIR = '/home/ubuntu/GitReps/walk_with_ai/models'

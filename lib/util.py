@@ -19,6 +19,7 @@ deep_learning_dir = os.path.join(os.path.dirname(parentdir),"deep_learning_libra
 sys.path.append(deep_learning_dir)
 from diy_deep_learning_library import FFNetwork
 
+
 def build_conv_net(input_width,
                    input_height,
                    input_depth):
@@ -96,7 +97,7 @@ def build_mlp_net(input_width):
     output_layer_size = 3
     
     # add hidden layer
-    neural_net.addFCLayer(hiddden_layer_size)
+    neural_net.addFCLayer(hidden_layer_size)
     
     # add output layer
     neural_net.addFCLayer(output_layer_size,activation = 'softmax')
@@ -107,11 +108,11 @@ def build_mlp_net(input_width):
     
     return neural_net
 
-def create_and_prep_net(net_type = 'conv',
-                        input_width, # required for both conv and mlp net types
+def create_and_prep_net(input_width, # required for both conv and mlp net types,
+                        target_label_list,
+                        net_type = 'conv',
                         input_height = None,
-                        input_depth = None,
-                        target_label_list):
+                        input_depth = None,):
     '''Util function that builds and preps a convolutional pilot net for training.'''
     
     assert (net_type in ('conv','mlp'))
@@ -157,7 +158,7 @@ def load_models(game,net_type,model_dir,load_oldest_only = True):
         if load_oldest_only:
             # pick oldest model only
             pos = np.argmax(episodes_trained)
-            game_model_names, episodes_trained = list(game_model_names[pos]), list(episodes_trained[pos])
+            game_model_names, episodes_trained = [game_model_names[pos]], [episodes_trained[pos]]
             
         # get model object(s)
         game_model_paths = [os.path.join(model_dir,game_model_name) for game_model_name in game_model_names]
@@ -199,6 +200,9 @@ def get_teach_command_line_args(season_default = 5,
     parser.add_argument("-nv", "--non_visual_mode",
                         action="store_false", dest="visual_mode", default=True,
                         help="Do not visualize training - needed on linux VMs !-> visual_mode")
+    parser.add_argument('-md','--model_directory',
+                        help='Specify the directory to which models will be saved/from which models will be loaded',
+                        default = '..\..\models')
     
     args = parser.parse_args().__dict__
     

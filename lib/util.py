@@ -19,11 +19,11 @@ deep_learning_dir = os.path.join(os.path.dirname(parentdir),"deep_learning_libra
 sys.path.append(deep_learning_dir)
 from diy_deep_learning_library import FFNetwork
 
-def create_and_prep_net(input_width,
-                        input_height,
-                        input_depth,
-                        target_label_list):
-    '''Util function that builds and preps a convolutional pilot net for training.'''
+def build_conv_net(input_width,
+                   input_height,
+                   input_depth):
+    '''Util function that builds a convolutional pilot net for training.'''
+    
     # --- build conv net
     # build network
     neural_net = FFNetwork(2)
@@ -82,6 +82,47 @@ def create_and_prep_net(input_width,
     neural_net.fixateNetwork(np.zeros((10,input_depth,input_width,input_height)))
     
     print(neural_net)
+    
+    return neural_net
+
+def build_mlp_net(input_width):
+    '''Util function that builds a multi-layer-perceptron type of network, i.e.
+    no convolutional elements.'''
+    
+    # --- build mlp net
+    neural_net = FFNetwork()
+    
+    hidden_layer_size = 4
+    output_layer_size = 3
+    
+    # add hidden layer
+    neural_net.addFCLayer(hiddden_layer_size)
+    
+    # add output layer
+    neural_net.addFCLayer(output_layer_size,activation = 'softmax')
+    
+    neural_net.fixateNetwork(np.zeros((10,input_width)))
+    
+    print(neural_net)
+    
+    return neural_net
+
+def create_and_prep_net(net_type = 'conv',
+                        input_width, # required for both conv and mlp net types
+                        input_height = None,
+                        input_depth = None,
+                        target_label_list):
+    '''Util function that builds and preps a convolutional pilot net for training.'''
+    
+    assert (net_type in ('conv','mlp'))
+
+    # --- build net
+    if net_type == 'conv':
+        neural_net = build_conv_net(input_width,
+                                    input_height,
+                                    input_depth)
+    elif net_type == 'mlp':
+        neural_net = build_mlp_net(input_width)
     
     # prep network for inference without training it
     neural_net.oneHotY(np.array(target_label_list))

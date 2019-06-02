@@ -252,11 +252,11 @@ class Pong_with_AI(object):
                          
         return steer
     
-    def get_ai_steer_and_log(self,ai_pilot,raw_level_history,level_state):
+    def get_ai_steer_and_log(self,ai_pilot,level_history,level_state):
             
-        if len(raw_level_history) >= 2:
+        if len(level_history) >= 2:
             # create input to ai pilot from raw level states
-            ai_input = ai_pilot.create_input(raw_level_history)
+            ai_input = ai_pilot.create_input(level_history)
             
             ai_steer = ai_pilot.create_output(ai_input)
             
@@ -300,14 +300,17 @@ class Pong_with_AI(object):
               ai_pilot = None,
               history_length = 10,
               max_frames = 200,
-              visual = True):
+              visual = True,
+              level_history_type = 'raw'):
+        
+        assert level_history_type in ('raw','positional')
         
         # get max frames
         frames_left = max_frames
         #print(frames_left)
         
-        # initialize raw level feature history
-        raw_level_history = []
+        # initialize level feature history
+        level_history = []
         
         # create screen according to whether video is available or not
         if visual:
@@ -331,9 +334,14 @@ class Pong_with_AI(object):
             # update frame counter
             frames_left -= 1
             
-            # --- append to raw state history and truncate
-            raw_level_history.append(pg.surfarray.array3d(self.main_screen))
-            raw_level_history = raw_level_history[:history_length]
+            # --- append to state history and truncate
+            if level_history_type == 'raw':
+                level_history.append(pg.surfarray.array3d(self.main_screen))
+            elif level_history_type == 'positional':
+                positional_level_snapshot = np.concatenate(opponent_paddle.x.y,player_paddle.x.y,ball.x,ball.v,axis=0)
+                level_history.append(positional_level_snapshot)
+            
+            level_history = level_history[:history_length]
             
             # --- check for game end criteria
             level_state = self.get_level_state(ball,frames_left)
@@ -353,7 +361,10 @@ class Pong_with_AI(object):
                 player_steer = self.get_player_steer()
             # get ai steer if needed
             elif ai_pilot != None:
-                player_steer = self.get_ai_steer_and_log(ai_pilot,raw_level_history,level_state)
+                    
+                player_steer = self.get_ai_steer_and_log(ai_pilot,
+                                                         level_history,
+                                                         level_state)
                 
             opponent_steer = self.get_opponent_steer(ball,opponent_paddle)
             
@@ -470,4 +481,33 @@ def conv_featurize_difference_last_two_frames(history_list):
     input_frame = np.expand_dims(difference_frame_rearr,axis=0)
     
     return input_frame
+
+def normalize_positional_stats(history_list,
+                               ball_speed = BALL_SPEED,
+                               window_width = WINDOW_SIZE[0],
+                               window_height = WINDOW_SIZE[1]):
+    '''Helper function that takes a numpy array of the form
+    [opponent_y,player_y,ball_x,ball_y,ball_vx,ball_vy],
+    normalizes positional parameters by window size and velocity parameters
+    by ball's speed. Returns a numpy array of the same dimension.'''
     
+    assert len(history_list) >= 1
+    
+    # get most recent data point
+    current_positional_state = history_list[-1]
+    
+    # scale the y coordinates to [-1,1]
+    y_coord_pos = np.array(True,True,False,True,False,False)
+    current_positional_state_normed = (current_positional_state[0,y_coord_pos] - 0.5 * window_height) / window_height
+    
+    # scale the x coordinates to [-1,1]
+    x_coord_pos = np.array(False,False,True,False,False,False)
+    current_positional_state_normed = (current_positional_state_normed[0,x_coord_pos] - 0.5 * window_width) / window_width
+    
+    # scale the ball velocity coordinates to [-1,1]
+    ball_v_coord_pos = np.array(False,False,False,False,True,True)
+    current_positional_state_normed = (current_positional_state_normed[0,ball_v_coord_pos] - 0.5 * ball_speed) / ball_speed
+    
+    input_frame = current_positional_state_normed
+    
+    return input_frame

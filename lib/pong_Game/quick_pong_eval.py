@@ -5,9 +5,11 @@ Created on Sun May 19 13:44:38 2019
 @author: bettmensch
 """
 
-n = 45000
+import pickle
 
-with open('C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models\\pong_pilot_'+str(n)+'_epsiodes','rb') as model_file:
+n = 415
+
+with open('C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models\\pong_pilot_mlp_'+str(n)+'_episodes','rb') as model_file:
     model = pickle.load(model_file)
     
 ai_pilot = AI_Pong(model)

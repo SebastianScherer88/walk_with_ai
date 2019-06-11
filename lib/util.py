@@ -49,7 +49,7 @@ def build_conv_net(input_width,
     
     n4 = 30
     
-    n_output = 3
+    n_output = 2
     
     neural_net.addConvLayer(kernelHeight=kernelSize1,
                        kernelWidth=kernelSize1,
@@ -94,7 +94,7 @@ def build_mlp_net(input_width):
     neural_net = FFNetwork()
     
     hidden_layer_size = 4
-    output_layer_size = 3
+    output_layer_size = 2
     
     # add hidden layer
     neural_net.addFCLayer(hidden_layer_size)
@@ -128,7 +128,7 @@ def create_and_prep_net(input_width, # required for both conv and mlp net types,
     # prep network for inference without training it
     neural_net.oneHotY(np.array(target_label_list))
 
-    neural_net.initialize_layer_optimizers('sgd',eta = 0.001,gamma = 0.99,epsilon = 0.00000001,lamda = 0,batchSize = 1)
+    neural_net.initialize_layer_optimizers('sgd',eta = 0.1,gamma = 0.99,epsilon = 0.00000001,lamda = 0,batchSize = 1)
     
     neural_net.trained = True
     

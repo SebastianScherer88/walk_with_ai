@@ -262,7 +262,8 @@ class Pong_with_AI(object):
             
             ai_pilot.update_log(ai_input,ai_steer,level_state)
         else:
-            ai_steer = NONE
+            # 50/50 call
+            ai_steer = np.random.choice([UP,DOWN])
         
         return ai_steer
     
@@ -273,7 +274,8 @@ class Pong_with_AI(object):
         elif opponent_paddle.rect.centery - ball.rect.centery < -(stat_margin * opponent_paddle.rect.height):
             steer = DOWN
         else:
-            steer = NONE
+            # 50/50 call
+            steer = np.random.choice([UP,DOWN])
            
         #print("opponent center - ball center:",opponent_paddle.rect.centery - ball.rect.centery)
         #print("opponent steer:",steer)

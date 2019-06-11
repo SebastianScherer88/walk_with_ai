@@ -74,7 +74,7 @@ def teach_pong(seasons = N_TRAINING_SEASONS,
                                          input_width = input_width,
                                          input_height = WINDOW_SIZE[1],
                                          input_depth = N_CHANNELS,
-                                         target_label_list = [UP,DOWN,NONE])
+                                         target_label_list = [UP,DOWN])
         taught_episodes = 0
     
     # --- train model
@@ -88,7 +88,8 @@ def teach_pong(seasons = N_TRAINING_SEASONS,
                                                                        visual = visual,
                                                                        net_type = net_type),
                                            n_episodes = episodes_per_season,
-                                           learning_rate = 0.01,
+                                           learning_rate = 0.1,
+                                           multiply_episode = 5,
                                            episode_batch_size = 10,
                                            verbose = True,
                                            reward = 1,

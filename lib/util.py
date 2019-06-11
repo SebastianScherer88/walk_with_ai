@@ -19,11 +19,12 @@ deep_learning_dir = os.path.join(os.path.dirname(parentdir),"deep_learning_libra
 sys.path.append(deep_learning_dir)
 from diy_deep_learning_library import FFNetwork
 
-def create_and_prep_net(input_width,
-                        input_height,
-                        input_depth,
-                        target_label_list):
-    '''Util function that builds and preps a convolutional pilot net for training.'''
+
+def build_conv_net(input_width,
+                   input_height,
+                   input_depth):
+    '''Util function that builds a convolutional pilot net for training.'''
+    
     # --- build conv net
     # build network
     neural_net = FFNetwork(2)
@@ -83,6 +84,47 @@ def create_and_prep_net(input_width,
     
     print(neural_net)
     
+    return neural_net
+
+def build_mlp_net(input_width):
+    '''Util function that builds a multi-layer-perceptron type of network, i.e.
+    no convolutional elements.'''
+    
+    # --- build mlp net
+    neural_net = FFNetwork()
+    
+    hidden_layer_size = 4
+    output_layer_size = 3
+    
+    # add hidden layer
+    neural_net.addFCLayer(hidden_layer_size)
+    
+    # add output layer
+    neural_net.addFCLayer(output_layer_size,activation = 'softmax')
+    
+    neural_net.fixateNetwork(np.zeros((10,input_width)))
+    
+    print(neural_net)
+    
+    return neural_net
+
+def create_and_prep_net(input_width, # required for both conv and mlp net types,
+                        target_label_list,
+                        net_type = 'conv',
+                        input_height = None,
+                        input_depth = None,):
+    '''Util function that builds and preps a convolutional pilot net for training.'''
+    
+    assert (net_type in ('conv','mlp'))
+
+    # --- build net
+    if net_type == 'conv':
+        neural_net = build_conv_net(input_width,
+                                    input_height,
+                                    input_depth)
+    elif net_type == 'mlp':
+        neural_net = build_mlp_net(input_width)
+    
     # prep network for inference without training it
     neural_net.oneHotY(np.array(target_label_list))
 
@@ -92,46 +134,51 @@ def create_and_prep_net(input_width,
     
     return neural_net
 
-def load_oldest_model(game,model_dir):
+def load_models(game,net_type,model_dir,load_oldest_only = True):
     '''Helper function that loads the most trained walker/pong model from specified model
     directory. Also retains the number of episodes the loaded model has been trained on.'''
     
     # sanity check inputs
     assert game in ('pong','walker')
+    assert net_type in ('conv','mlp')
     assert os.path.isdir(model_dir)
     
-    # get oldest model for given game/experiment
-    game_models = [model_name for model_name in os.listdir(model_dir) if game in model_name]
+    # get models names and number of episodes trained
+    if game == 'walker':
+        game_model_names = [model_name for model_name in os.listdir(model_dir) if game in model_name]
+        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_model_names))
+    # pong game support different net architecture types and needs special treatment
+    elif game == 'pong':
+        game_model_pattern = '_'.join([game,'pilot',net_type])
+        game_model_names = [model_name for model_name in os.listdir(model_dir) if game_model_pattern in model_name]
+        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[3]),game_model_names))
     
-    if len(game_models) != 0:
-        # get path to most trained model
-        episodes_trained = list(map(lambda model_name: int(model_name.split('_')[2]),game_models))
-        pos = np.argmax(episodes_trained)
-        game_model_name, episodes_trained = game_models[pos], episodes_trained[pos]
-        game_model_path = os.path.join(model_dir,game_model_name)
+    # load models object(s) together with their training age
+    if len(game_model_names) != 0:
+        if load_oldest_only:
+            # pick oldest model only
+            pos = np.argmax(episodes_trained)
+            game_model_names, episodes_trained = [game_model_names[pos]], [episodes_trained[pos]]
+            
+        # get model object(s)
+        game_model_paths = [os.path.join(model_dir,game_model_name) for game_model_name in game_model_names]
+        game_models = []
         
-        # load most trained model
-        with open(game_model_path,'rb') as game_model_file:
-            game_model = pickle.load(game_model_file)
+        for game_model_path in game_model_paths:
+            with open(game_model_path,'rb') as game_model_file:
+                game_models.append(pickle.load(game_model_file))
     else:
-        game_model, episodes_trained = None, 0
+        game_models, episodes_trained = list(None), list(0)
         
-    return game_model, episodes_trained
+    # return only the last model's data if specified
+    if load_oldest_only:
+        return game_models[0], episodes_trained[0]
+        
+    return game_models, episodes_trained
 
-def save_trained_model(game,model_dir,trained_model,n_total_episodes):
-    '''Helper function that saves a convolutional model object in designated dir,
-    versioned with the total number of episodes trained.'''
-    
-    # create model name
-    model_name = '_'.join([game,'pilot',str(n_total_episodes),'episodes'])
-    
-    # save model
-    trained_model.save(save_dir = model_dir,model_name = model_name)
-        
-    return
-    
-def get_command_line_args(season_default = 5,
-                          episode_default = 1000):
+   
+def get_teach_command_line_args(season_default = 5,
+                                episode_default = 1000):
     parser = ArgumentParser()
     parser.add_argument("-s", "--seasons",
                         dest="n_seasons",
@@ -146,9 +193,16 @@ def get_command_line_args(season_default = 5,
     parser.add_argument("-n", "--train_new_model",
                         action="store_true", dest="train_from_scratch", default=False,
                         help="Train new model from scratch -> train_from_scratch")
+    parser.add_argument('-nt','--net_type',
+                        default='conv',
+                        help='Specify the network architecture. Can be convolutional or strictly feed forward.',
+                        choices = ['conv','mlp'])
     parser.add_argument("-nv", "--non_visual_mode",
                         action="store_false", dest="visual_mode", default=True,
                         help="Do not visualize training - needed on linux VMs !-> visual_mode")
+    parser.add_argument('-md','--model_directory',
+                        help='Specify the directory to which models will be saved/from which models will be loaded',
+                        default = '..\..\models')
     
     args = parser.parse_args().__dict__
     

@@ -32,12 +32,12 @@ from util import create_and_prep_net, load_models, get_teach_command_line_args
 sys.path.append(deep_learning_dir)
 from diy_deep_learning_library import FFNetwork, PG
 
-n = 2095000
+n = 50
 
-with open('C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models\\pong_pilot_mlp_'+str(n),'rb') as model_file:
+with open('C:\\Users\\bettmensch\\GitReps\\walk_with_AI\\models\\pong_pilot_mlp_'+str(n)+'_episodes','rb') as model_file:
     model = pickle.load(model_file)
     
-ai_pilot = AI_Pong(model = model,net_type = 'mlp')
+ai_pilot = AI_Pong(model = model,net_type = 'mlp',sample_from_distribution=False)
 
 #ai_log = Pong_with_AI().start(ai_pilot = None).log
 for i in range(5):

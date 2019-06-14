@@ -408,7 +408,7 @@ class AI_Pong(object):
     '''Wrapper class to pass to Pong_With_AI that converts raw level state history
     to model inputs and uses these inputs to create an actual steer.'''
     
-    def __init__(self,model,net_type='conv',level_state_rewards = REWARDS_MAP):
+    def __init__(self,model,net_type='conv',level_state_rewards = REWARDS_MAP,sample_from_distribution=True):
         
         # attach specified feature converter
         assert (net_type in ('conv','mlp'))
@@ -426,7 +426,13 @@ class AI_Pong(object):
         # initialize the ai pilot's log to be able to access the history created
         self.log = {'X':[],'y':[], 'reinforce_coeff':None}
         
+        # retain attribute flag indicating whether we should sample from output distribution to obtain prediction
+        # should be True during optimization, but not during evalution
+        assert (sample_from_distribution in (True,False))
+        self.sample_from_distribution = sample_from_distribution
+        
     def create_output(self,feature_state):
+        
         # get class conditional distribution = classification network output without argmaxing
         cond_class_distr = self.model.predict(feature_state,distribution = True)
         
@@ -436,8 +442,10 @@ class AI_Pong(object):
         
         #print(self.model.classes_ordered)
         #print(type(self.model.classes_ordered))
-        
-        output = self.model.classes_ordered[np.argmax(np.random.multinomial(1,cond_class_distr[0]))]
+        if self.sample_from_distribution:
+            output = self.model.classes_ordered[np.argmax(np.random.multinomial(1,cond_class_distr[0]))]
+        else:
+            output = self.model.classes_ordered[np.argmax(cond_class_distr[0])]
         
         #print(output)
         
